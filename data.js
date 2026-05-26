@@ -1,0 +1,347 @@
+const SERVICES_DATA = {
+  societies: [
+    { id: 'gokuldham', name: 'Gokuldham Society' },
+    { id: 'shanti_kunj', name: 'Shanti Kunj Heights' },
+    { id: 'green_valley', name: 'Green Valley Apartments' },
+    { id: 'royal_palms', name: 'Royal Palms Residency' }
+  ],
+  categories: [
+    {
+      id: 'electrician',
+      name: 'Electrician',
+      icon: '⚡',
+      description: 'Fan installations, short circuits, home wiring & appliance repairs.',
+      bgGradient: 'linear-gradient(135deg, #f6d365 0%, #fda085 100%)'
+    },
+    {
+      id: 'carpenter',
+      name: 'Carpenter',
+      icon: '🪚',
+      description: 'Furniture repair, custom cabinets, door fitting & wooden polishing.',
+      bgGradient: 'linear-gradient(135deg, #abecd6 0%, #fbed96 100%)'
+    },
+    {
+      id: 'painter',
+      name: 'Painter',
+      icon: '🎨',
+      description: 'Interior & exterior painting, texture wall painting & touch-ups.',
+      bgGradient: 'linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%)'
+    },
+    {
+      id: 'wallpaper',
+      name: 'Wallpaper Specialist',
+      icon: '🖼️',
+      description: 'Custom wallpaper installation, removal, and wall styling.',
+      bgGradient: 'linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%)'
+    },
+    {
+      id: 'plumber',
+      name: 'Plumber',
+      icon: '🚰',
+      description: 'Leak detection, pipe repairs, tap installations & drain cleaning.',
+      bgGradient: 'linear-gradient(135deg, #cfd9df 0%, #e2ebf0 100%)'
+    }
+  ],
+
+  providers: [
+    {
+      id: 'p1',
+      name: 'Alex Mercer',
+      category: 'electrician',
+      rating: 4.9,
+      reviewsCount: 142,
+      experience: 8,
+      hourlyRate: 45,
+      avatar: 'https://images.unsplash.com/photo-1540569014015-19a7be504e3a?w=200&h=200&fit=crop&q=80',
+      banner: 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=800&h=300&fit=crop&q=80',
+      tagline: 'Certified Industrial & Residential Electrician',
+      isVerified: true,
+      phone: '+91 98765 43210',
+      societies: ['gokuldham', 'green_valley'],
+      bio: 'Over 8 years of experience in residential electrical systems. Specializes in smart home integration, troubleshooting complex circuits, and safety audits.',
+      skills: ['Smart Home Integration', 'Rewiring', 'Appliance Repair', 'Circuit Breakers', 'Emergency Repairs'],
+      pricingList: [
+        { id: 'e_fan', name: 'Ceiling Fan Installation', price: 49 },
+        { id: 'e_switch', name: 'Switchboard Repair/Replace', price: 29 },
+        { id: 'e_wiring', name: 'Single Room Rewiring', price: 180 },
+        { id: 'e_smart', name: 'Smart Switch Integration (per node)', price: 35 },
+        { id: 'e_consult', name: 'Electrical Safety Inspection', price: 60 }
+      ],
+      reviews: [
+        { author: 'Jane Doe', rating: 5, text: 'Alex arrived on time, was extremely professional, and fixed my ceiling fan in 20 minutes! Highly recommend.', date: '2026-05-12' },
+        { author: 'Michael Chen', rating: 4.8, text: 'Very detailed. Did a full inspection of my old apartment wiring. Gave solid advice.', date: '2026-05-02' }
+      ]
+    },
+    {
+      id: 'p2',
+      name: 'Sarah Jenkins',
+      category: 'painter',
+      rating: 4.8,
+      reviewsCount: 96,
+      experience: 6,
+      hourlyRate: 50,
+      avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=200&h=200&fit=crop&q=80',
+      banner: 'https://images.unsplash.com/photo-1562259949-e8e7689d7828?w=800&h=300&fit=crop&q=80',
+      tagline: 'Professional Interior Designer & Painter',
+      isVerified: true,
+      phone: '+91 98765 43211',
+      societies: ['shanti_kunj', 'royal_palms'],
+      bio: 'Bringing life to spaces for over 6 years. Specializes in luxury textured painting, color consultations, and precision trim work.',
+      skills: ['Textured Walls', 'Cabinet Painting', 'Accent Walls', 'Exterior Coating', 'Color Consultation'],
+      pricingList: [
+        { id: 'pa_room', name: 'Single Room Painting (Excl. Paint)', price: 250 },
+        { id: 'pa_accent', name: 'Accent Wall Design Painting', price: 120 },
+        { id: 'pa_trim', name: 'Door & Trim Painting (Per Unit)', price: 45 },
+        { id: 'pa_consult', name: 'Color Consultation Visit', price: 40 }
+      ],
+      reviews: [
+        { author: 'Emily Watson', rating: 5, text: 'Sarah transforms rooms! Her color recommendations were spot on, and the lines are laser straight.', date: '2026-05-20' }
+      ]
+    },
+    {
+      id: 'p3',
+      name: 'Marcus Brody',
+      category: 'carpenter',
+      rating: 4.7,
+      reviewsCount: 84,
+      experience: 10,
+      hourlyRate: 55,
+      avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&h=200&fit=crop&q=80',
+      banner: 'https://images.unsplash.com/photo-1533090161767-e6ffed986c88?w=800&h=300&fit=crop&q=80',
+      tagline: 'Master Craftsman & Custom Woodworker',
+      isVerified: true,
+      phone: '+91 98765 43212',
+      societies: ['gokuldham', 'shanti_kunj'],
+      bio: 'Veteran carpenter with 10 years of working with hard woods, soft woods, custom cabinet designs, and architectural molding.',
+      skills: ['Custom Cabinets', 'Furniture Restoration', 'Door Installations', 'Deck Repair', 'Lock Fitting'],
+      pricingList: [
+        { id: 'c_door', name: 'Door Hinge & Alignment Adjustment', price: 35 },
+        { id: 'c_shelf', name: 'Floating Shelf Installation (Per Shelf)', price: 50 },
+        { id: 'c_cabinet', name: 'Kitchen Cabinet Repair (Per hinge/drawer)', price: 40 },
+        { id: 'c_furniture', name: 'Custom Wooden Table Polish/Varnish', price: 150 }
+      ],
+      reviews: [
+        { author: 'Arthur Dent', rating: 4.5, text: 'Excellent workmanship on our kitchen drawers. Marcus knows his wood.', date: '2026-04-18' }
+      ]
+    },
+    {
+      id: 'p4',
+      name: 'Linus Oberg',
+      category: 'wallpaper',
+      rating: 4.9,
+      reviewsCount: 110,
+      experience: 7,
+      hourlyRate: 60,
+      avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=200&h=200&fit=crop&q=80',
+      banner: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&h=300&fit=crop&q=80',
+      tagline: 'Precision Wallpaper & Vinyl Specialist',
+      isVerified: true,
+      phone: '+91 98765 43213',
+      societies: ['green_valley', 'royal_palms'],
+      bio: 'Specialist in high-end wallpapers, mural wallpapers, and commercial vinyl graphics. Guarantee smooth edges, seamless patterns, and bubble-free installations.',
+      skills: ['Mural Wallpaper', 'Vinyl Wrap', 'Wallpaper Removal', 'Textured Liners', 'Wall Prep & Patching'],
+      pricingList: [
+        { id: 'w_install', name: 'Wallpaper Installation (Standard Roll)', price: 80 },
+        { id: 'w_remove', name: 'Old Wallpaper Removal (Per Room)', price: 120 },
+        { id: 'w_mural', name: 'Large Wall Mural Application', price: 220 },
+        { id: 'w_prep', name: 'Wall Priming & Prep (Per Room)', price: 60 }
+      ],
+      reviews: [
+        { author: 'Olivia Brown', rating: 5, text: 'Linus did an amazing job with a complex patterned wallpaper. You can\'t even see the seams!', date: '2026-05-15' }
+      ]
+    },
+    {
+      id: 'p5',
+      name: 'David Miller',
+      category: 'plumber',
+      rating: 4.6,
+      reviewsCount: 65,
+      experience: 5,
+      hourlyRate: 40,
+      avatar: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=200&h=200&fit=crop&q=80',
+      banner: 'https://images.unsplash.com/photo-1581094288338-2314dddb7ecc?w=800&h=300&fit=crop&q=80',
+      tagline: 'Residential Plumbing Repair Expert',
+      isVerified: false,
+      phone: '+91 98765 43214',
+      societies: ['gokuldham', 'royal_palms'],
+      bio: 'Friendly neighborhood plumber specializing in rapid leak fixes, kitchen/bathroom upgrades, and water filtration setups.',
+      skills: ['Leak Fixes', 'Drain Unclogging', 'Faucet Install', 'Water Heater Repair', 'Pipe Replacement'],
+      pricingList: [
+        { id: 'pl_faucet', name: 'Faucet/Tap Replacement', price: 45 },
+        { id: 'pl_clog', name: 'Drain De-clogging (Kitchen/Bath)', price: 65 },
+        { id: 'pl_heater', name: 'Water Heater Maintenance', price: 99 },
+        { id: 'pl_leak', name: 'Leak Diagnostics & Sealing', price: 55 }
+      ],
+      reviews: [
+        { author: 'Sam Wilson', rating: 4, text: 'Fixed our leaky sink quickly. Cleaned up after himself.', date: '2026-05-09' }
+      ]
+    },
+    {
+      id: 'p6',
+      name: 'Carlos Santana',
+      category: 'electrician',
+      rating: 4.7,
+      reviewsCount: 78,
+      experience: 9,
+      hourlyRate: 48,
+      avatar: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=200&h=200&fit=crop&q=80',
+      banner: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=800&h=300&fit=crop&q=80',
+      tagline: 'Commercial & High-Voltage Electrician',
+      isVerified: true,
+      phone: '+91 98765 43215',
+      societies: ['shanti_kunj', 'green_valley'],
+      bio: 'Handling commercial switchgears, generator integrations, and complex home electrical wiring setups.',
+      skills: ['Generator Install', 'High Voltage Switchgear', 'Home Wiring', 'Fault Finding'],
+      pricingList: [
+        { id: 'e_generator', name: 'Home Generator Connection Setup', price: 149 },
+        { id: 'e_panel', name: 'Breaker Panel Upgrade', price: 350 },
+        { id: 'e_wiring_full', name: 'Full Apartment Safety Rewiring', price: 600 }
+      ],
+      reviews: [
+        { author: 'Rebecca Moore', rating: 5, text: 'Carlos set up our backup generator perfectly. Safe and neat work.', date: '2026-05-18' }
+      ]
+    },
+    {
+      id: 'p7',
+      name: 'Jessica Vance',
+      category: 'painter',
+      rating: 4.9,
+      reviewsCount: 112,
+      experience: 7,
+      hourlyRate: 52,
+      avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&h=200&fit=crop&q=80',
+      banner: 'https://images.unsplash.com/photo-1589939705384-5185137a7f0f?w=800&h=300&fit=crop&q=80',
+      tagline: 'Meticulous Fine Detail & Spray Painting Expert',
+      isVerified: true,
+      phone: '+91 98765 43216',
+      societies: ['gokuldham', 'shanti_kunj', 'green_valley', 'royal_palms'],
+      bio: 'Specialized in ultra-smooth spray painting finishes for doors, cabinets, and premium interiors. Low-VOC paint advocate.',
+      skills: ['Spray Finishing', 'Cabinet Refinishing', 'Fine Wall Textures', 'Deck Staining'],
+      pricingList: [
+        { id: 'pa_cabinet_refinish', name: 'Full Kitchen Cabinets Spray Painting', price: 499 },
+        { id: 'pa_wall_smooth', name: 'Premium Low-VOC Single Wall Painting', price: 140 }
+      ],
+      reviews: [
+        { author: 'Tom Harrison', rating: 5, text: 'Our kitchen looks brand new! Jessica spray-painted the cupboards and the finish is flawless.', date: '2026-05-22' }
+      ]
+    },
+    {
+      id: 'p8',
+      name: 'Vikram Singh',
+      category: 'carpenter',
+      rating: 4.8,
+      reviewsCount: 92,
+      experience: 12,
+      hourlyRate: 58,
+      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop&q=80',
+      banner: 'https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?w=800&h=300&fit=crop&q=80',
+      tagline: 'Handcrafted Wooden Furniture Maker',
+      isVerified: true,
+      phone: '+91 98765 43217',
+      societies: ['royal_palms', 'green_valley'],
+      bio: 'Specialist in antique restoration, custom built-in closets, wood carving, and sturdy structural repairs.',
+      skills: ['Antique Restoration', 'Custom Closets', 'Wood Carving', 'Framing'],
+      pricingList: [
+        { id: 'c_closet', name: 'Custom Built-in Closet Repair', price: 120 },
+        { id: 'c_hinge', name: 'Premium Heavy-Duty Hinge Install', price: 40 },
+        { id: 'c_carving', name: 'Decorative Wooden Board Carving', price: 90 }
+      ],
+      reviews: [
+        { author: 'Clara Oswald', rating: 4.7, text: 'Vikram repaired our inherited wooden chest beautifully. A true artist.', date: '2026-05-14' }
+      ]
+    },
+    {
+      id: 'p9',
+      name: 'Emma Watson',
+      category: 'wallpaper',
+      rating: 4.7,
+      reviewsCount: 54,
+      experience: 4,
+      hourlyRate: 48,
+      avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200&h=200&fit=crop&q=80',
+      banner: 'https://images.unsplash.com/photo-1615529182904-14819c35db37?w=800&h=300&fit=crop&q=80',
+      tagline: 'Modern Peel-and-Stick & Fabric Wallpaper Installer',
+      isVerified: false,
+      phone: '+91 98765 43218',
+      societies: ['gokuldham', 'shanti_kunj'],
+      bio: 'Providing quick, high-quality wallpaper services focusing on rental-friendly peel-and-stick wallpapers and nursery murals.',
+      skills: ['Peel-and-Stick', 'Nursery Wallpapers', 'Decal Application', 'Removals'],
+      pricingList: [
+        { id: 'w_peel_stick', name: 'Peel-and-Stick Install (Single Wall)', price: 70 },
+        { id: 'w_decal', name: 'Small Wall Decals & Stickers', price: 30 }
+      ],
+      reviews: [
+        { author: 'Lucas Vance', rating: 4.8, text: 'Perfect installation of the nursery wallpaper. Emma was fast and neat.', date: '2026-05-23' }
+      ]
+    },
+    {
+      id: 'p10',
+      name: 'Robert Stark',
+      category: 'plumber',
+      rating: 4.8,
+      reviewsCount: 88,
+      experience: 11,
+      hourlyRate: 54,
+      avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&h=200&fit=crop&q=80',
+      banner: 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=800&h=300&fit=crop&q=80',
+      tagline: 'Advanced Pipeline & Emergency Plumber',
+      isVerified: true,
+      phone: '+91 98765 43219',
+      societies: ['shanti_kunj', 'royal_palms'],
+      bio: 'Over 11 years handling heavy sewer line issues, home plumbing upgrades, smart leak system installs, and sump pump diagnostics.',
+      skills: ['Sewer Inspection', 'Sump Pumps', 'Leak Detection systems', 'Slab Leaks'],
+      pricingList: [
+        { id: 'pl_sumppump', name: 'Sump Pump Test & Tuning', price: 110 },
+        { id: 'pl_sewer', name: 'Sewer Line Camera Inspection', price: 140 },
+        { id: 'pl_slab', name: 'Slab Leak Diagnostic Test', price: 150 }
+      ],
+      reviews: [
+        { author: 'Jon Snow', rating: 5, text: 'Robert saved our basement from flooding! He came out late on a Saturday and resolved the sump pump blockage.', date: '2026-05-19' }
+      ]
+    }
+  ],
+
+  // Prepopulated bookings to avoid empty state
+  bookings: [
+    {
+      id: 'b_mock_1',
+      providerId: 'p1',
+      providerName: 'Alex Mercer',
+      providerCategory: 'electrician',
+      providerAvatar: 'https://images.unsplash.com/photo-1540569014015-19a7be504e3a?w=200&h=200&fit=crop&q=80',
+      date: '2026-05-28',
+      time: '10:00 AM',
+      servicesSelected: [
+        { name: 'Ceiling Fan Installation', price: 49 },
+        { name: 'Switchboard Repair/Replace', price: 29 }
+      ],
+      totalPrice: 78,
+      status: 'pending', // pending, accepted, completed, cancelled
+      chatHistory: [
+        { sender: 'user', text: 'Hi Alex, I have a ceiling fan that needs installation in my master bedroom and a broken light switch in the living room.', time: '2:15 PM' },
+        { sender: 'provider', text: 'Hello! That sounds straightforward. I can do both in about an hour. See you on the 28th!', time: '2:30 PM' }
+      ]
+    },
+    {
+      id: 'b_mock_2',
+      providerId: 'p3',
+      providerName: 'Marcus Brody',
+      providerCategory: 'carpenter',
+      providerAvatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&h=200&fit=crop&q=80',
+      date: '2026-05-24',
+      time: '02:00 PM',
+      servicesSelected: [
+        { name: 'Floating Shelf Installation (Per Shelf)', price: 50 },
+        { name: 'Door Hinge & Alignment Adjustment', price: 35 }
+      ],
+      totalPrice: 85,
+      status: 'completed',
+      chatHistory: [
+        { sender: 'user', text: 'Hi Marcus, the shelves are heavy pine wood. Do you have heavy-duty anchors?', time: '9:00 AM' },
+        { sender: 'provider', text: 'Yes, I bring heavy-duty plasterboard and masonry toggles. It will hold strong.', time: '9:15 AM' },
+        { sender: 'provider', text: 'I am on my way now.', time: '1:45 PM' },
+        { sender: 'user', text: 'Great work! The shelves look fantastic and the door doesn\'t squeak anymore.', time: '3:30 PM' }
+      ]
+    }
+  ]
+};

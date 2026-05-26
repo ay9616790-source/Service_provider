@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Servify - Trusted Local Home Service Providers</title>
+  <meta name="description" content="Find and book verified electricians, painters, carpenters, and wallpaper experts instantly. Real-time booking, pricing, and messaging.">
+  
+  <!-- Modern Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- CSS Stylesheet -->
+  <link rel="stylesheet" href="styles.css">
+  
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+
+  <!-- App Header / Navigation -->
+  <header class="app-header">
+    <div class="container header-container">
+      <a href="#" class="logo" id="nav-logo">
+        <span class="logo-icon">⚡</span>
+        <span class="logo-text">Servify</span>
+      </a>
+      
+      <nav class="main-nav">
+        <a href="#" class="nav-link active" data-target="landing-view">Home</a>
+        <a href="#" class="nav-link" data-target="explore-view">Explore Pros</a>
+        <a href="#" class="nav-link" data-target="user-dashboard-view" id="nav-bookings">My Bookings</a>
+        <a href="#" class="nav-link" data-target="provider-dashboard-view" id="nav-provider-portal">Provider Portal</a>
+      </nav>
+
+      <!-- Society Selector -->
+      <div class="society-selector-wrapper">
+        <i data-lucide="map-pin" class="pin-icon"></i>
+        <select id="header-society-select" class="society-select-dropdown">
+          <option value="all">All Societies</option>
+          <!-- Dynamically populated from SERVICES_DATA.societies -->
+        </select>
+      </div>
+
+      <div class="header-actions">
+        <!-- Theme Toggle -->
+        <button id="theme-toggle" class="btn-icon" aria-label="Toggle dark mode">
+          <i data-lucide="sun" class="sun-icon"></i>
+          <i data-lucide="moon" class="moon-icon"></i>
+        </button>
+        <!-- Quick Profile -->
+        <div class="user-profile-badge">
+          <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&h=80&fit=crop&q=80" alt="User Avatar" class="small-avatar">
+          <span class="profile-name">Abhishek K.</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Notification Toast -->
+  <div id="toast" class="toast hidden">
+    <span id="toast-message">Booking updated successfully!</span>
+  </div>
+
+  <!-- Main Viewport -->
+  <main class="viewport">
+    
+    <!-- 1. LANDING VIEW -->
+    <section id="landing-view" class="view-panel active">
+      <!-- Society Welcome Banner -->
+      <div id="society-welcome-banner" class="society-welcome-banner hidden">
+        <div class="container welcome-banner-flex">
+          <span class="welcome-text">📍 Welcome <strong id="society-banner-name">Gokuldham Society</strong> resident! Showing exclusive verified pros in your area.</span>
+          <button id="close-welcome-banner" class="btn-close">&times;</button>
+        </div>
+      </div>
+
+      <!-- Hero Section -->
+      <div class="hero">
+        <div class="hero-glow"></div>
+        <div class="container hero-content">
+          <h1 class="hero-title">Expert Home Services,<br><span class="gradient-text">On Demand.</span></h1>
+          <p class="hero-subtitle">Book top-rated, background-checked electricians, carpenters, painters, and wallpaper specialists in minutes.</p>
+          
+          <!-- Search Bar -->
+          <div class="search-container-box">
+            <div class="search-input-wrapper">
+              <i data-lucide="search" class="search-icon"></i>
+              <input type="text" id="landing-search-input" placeholder="What service do you need today? (e.g. electrical wiring, painting...)">
+            </div>
+            <button class="btn btn-primary" id="landing-search-btn">Find Pros</button>
+          </div>
+          
+          <!-- Hero Tags -->
+          <div class="hero-tags">
+            <span>Popular:</span>
+            <button class="tag" onclick="app.quickSearch('electrician')">Electrician</button>
+            <button class="tag" onclick="app.quickSearch('painter')">Painter</button>
+            <button class="tag" onclick="app.quickSearch('carpenter')">Carpenter</button>
+            <button class="tag" onclick="app.quickSearch('wallpaper')">Wallpaper</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Categories Section -->
+      <div class="section-container container">
+        <div class="section-header">
+          <div>
+            <h2 class="section-title">Explore by Category</h2>
+            <p class="section-subtitle">Find dedicated certified specialists for your home projects</p>
+          </div>
+        </div>
+        
+        <div class="categories-grid" id="categories-list">
+          <!-- Dynamically populated -->
+        </div>
+      </div>
+
+      <!-- Featured Providers Section -->
+      <div class="section-container container bg-offset">
+        <div class="section-header">
+          <div>
+            <h2 class="section-title">Featured Professionals</h2>
+            <p class="section-subtitle">Top-rated and fully verified service providers in your area</p>
+          </div>
+          <button class="btn btn-secondary" onclick="app.navigate('explore-view')">View All Pros</button>
+        </div>
+
+        <div class="featured-grid" id="featured-providers">
+          <!-- Dynamically populated -->
+        </div>
+      </div>
+
+      <!-- How it Works -->
+      <div class="section-container container">
+        <h2 class="section-title text-center">How Servify Works</h2>
+        <div class="steps-grid">
+          <div class="step-card">
+            <div class="step-icon-wrapper"><i data-lucide="search" class="step-icon"></i></div>
+            <h3>1. Search & Filter</h3>
+            <p>Browse our list of local service providers and filter by service, price, ratings, or skills.</p>
+          </div>
+          <div class="step-card">
+            <div class="step-icon-wrapper"><i data-lucide="calendar" class="step-icon"></i></div>
+            <h3>2. Book Instantly</h3>
+            <p>Customize your services checklist, pick a convenient date & time, and book with transparent pricing.</p>
+          </div>
+          <div class="step-card">
+            <div class="step-icon-wrapper"><i data-lucide="message-square" class="step-icon"></i></div>
+            <h3>3. Chat & Complete</h3>
+            <p>Discuss job details via direct chat, get the work done, and mark complete safely on the app.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Provider CTA Banner -->
+      <div class="container CTA-banner-wrapper">
+        <div class="cta-banner">
+          <div class="cta-content">
+            <h2>Are you a service provider?</h2>
+            <p>Grow your business, manage scheduling, set custom service lists, and reach hundreds of local customers with Servify.</p>
+            <button class="btn btn-white" onclick="app.navigate('provider-dashboard-view')">Join as Partner</button>
+          </div>
+          <div class="cta-image-mock">
+            <i data-lucide="shield-check" class="shield-cta-icon"></i>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. EXPLORE VIEW -->
+    <section id="explore-view" class="view-panel">
+      <div class="container explore-wrapper">
+        
+        <!-- Sidebar Filters -->
+        <aside class="sidebar-filters">
+          <div class="sidebar-header">
+            <h3>Filters</h3>
+            <button class="btn-text" id="clear-filters-btn">Clear All</button>
+          </div>
+          
+          <!-- Category Filter -->
+          <div class="filter-group">
+            <label class="filter-label">Service Category</label>
+            <select id="filter-category" class="filter-select">
+              <option value="all">All Services</option>
+              <!-- Populate categories -->
+            </select>
+          </div>
+
+          <!-- Society Location Filter -->
+          <div class="filter-group">
+            <label class="filter-label">Society Location</label>
+            <select id="filter-society" class="filter-select">
+              <option value="all">All Societies</option>
+              <!-- Populate societies -->
+            </select>
+          </div>
+          
+          <!-- Pricing Range Filter -->
+          <div class="filter-group">
+            <label class="filter-label">Hourly Rate Limit ($)</label>
+            <div class="range-display">Up to $<span id="range-value">100</span></div>
+            <input type="range" id="filter-price" min="30" max="100" value="100" class="range-slider">
+          </div>
+
+          <!-- Minimum Rating Filter -->
+          <div class="filter-group">
+            <label class="filter-label">Minimum Rating</label>
+            <div class="rating-options">
+              <label class="radio-label">
+                <input type="radio" name="filter-rating" value="all" checked> <span>All Ratings</span>
+              </label>
+              <label class="radio-label">
+                <input type="radio" name="filter-rating" value="4.8"> <span>⭐ 4.8 & above</span>
+              </label>
+              <label class="radio-label">
+                <input type="radio" name="filter-rating" value="4.5"> <span>⭐ 4.5 & above</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Verification Filter -->
+          <div class="filter-group">
+            <label class="checkbox-label">
+              <input type="checkbox" id="filter-verified">
+              <span>Verified Professionals Only</span>
+            </label>
+          </div>
+        </aside>
+
+        <!-- Search Results Panel -->
+        <div class="explore-main">
+          <div class="explore-search-bar">
+            <div class="search-input-wrapper">
+              <i data-lucide="search" class="search-icon"></i>
+              <input type="text" id="explore-search-input" placeholder="Search by provider name, skills, or services...">
+            </div>
+          </div>
+          
+          <div class="results-header">
+            <p class="results-count"><span id="count-value">0</span> professionals found</p>
+            <div class="sorting-selector">
+              <label for="sort-select">Sort by:</label>
+              <select id="sort-select" class="sort-select">
+                <option value="rating">Highest Rating</option>
+                <option value="experience">Experience (Years)</option>
+                <option value="price-low">Price: Low to High</option>
+                <option value="price-high">Price: High to Low</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Results Grid and Map layout -->
+          <div class="explore-layout-grid">
+            <div class="providers-results-list" id="providers-list-container">
+              <!-- Dynamically populated -->
+            </div>
+            
+            <!-- Map Side Panel -->
+            <div class="map-container">
+              <div class="map-placeholder">
+                <div class="map-glow"></div>
+                <div class="map-inner">
+                  <i data-lucide="map-pin" class="map-center-pin"></i>
+                  <span class="map-info">Interactive Service Coverage Area</span>
+                  <p class="map-sub">Displaying local professionals nearby</p>
+                </div>
+                <!-- Dynamic markers -->
+                <div id="map-markers-layer"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- 3. PROVIDER DETAIL / BOOKING VIEW -->
+    <section id="detail-view" class="view-panel">
+      <div class="container detail-wrapper">
+        <button class="btn btn-secondary btn-back" id="back-to-explore-btn">
+          <i data-lucide="arrow-left"></i> Back to Explore
+        </button>
+        
+        <div class="detail-columns">
+          
+          <!-- Left Column: Bio, Reviews, Showcase -->
+          <div class="detail-main-info">
+            <div class="provider-banner-wrapper">
+              <img id="detail-banner" src="" alt="Provider Banner" class="detail-banner">
+              <div class="banner-gradient-overlay"></div>
+              <div class="profile-header-card">
+                <img id="detail-avatar" src="" alt="Avatar" class="detail-avatar">
+                <div class="profile-heading-details">
+                  <div class="profile-name-row">
+                    <h1 id="detail-name">Alex Mercer</h1>
+                    <span id="detail-verified-badge" class="badge badge-verified hidden"><i data-lucide="shield-check"></i> Verified</span>
+                  </div>
+                  <p id="detail-tagline" class="profile-tagline">Certified Industrial & Residential Electrician</p>
+                  <div class="profile-stats-row">
+                    <span class="stat-item"><i data-lucide="star" class="star-filled"></i> <strong id="detail-rating">4.9</strong> (<span id="detail-reviews-count">142</span> reviews)</span>
+                    <span class="stat-item"><i data-lucide="briefcase"></i> <span id="detail-experience">8</span> years exp</span>
+                    <span class="stat-item"><i data-lucide="dollar-sign"></i> <span id="detail-hourly">45</span>/hr starting</span>
+                  </div>
+                  <div class="profile-call-box mt-3">
+                    <a href="tel:" id="detail-phone-link" class="btn btn-primary btn-call-now">
+                      <i data-lucide="phone"></i> Call Partner: <span id="detail-phone-display">+91 98765 43210</span>
+                    </a>
+                    <span class="call-hint-text">Call to discuss details and negotiate rate.</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- About Section -->
+            <div class="detail-card">
+              <h3>About the Professional</h3>
+              <p id="detail-bio" class="detail-bio-text">Over 8 years of experience in residential electrical systems. Specializes in smart home integration, troubleshooting complex circuits, and safety audits.</p>
+              
+              <h4 class="mt-4">Skills & Specializations</h4>
+              <div class="skills-flex" id="detail-skills">
+                <!-- Dynamically populated -->
+              </div>
+            </div>
+
+            <!-- Reviews Tab -->
+            <div class="detail-card">
+              <h3>Customer Reviews</h3>
+              <div class="reviews-summary-bar">
+                <div class="rating-big">
+                  <span id="detail-big-rating">4.9</span>
+                  <div class="star-rating-row" id="detail-big-stars">
+                    <!-- Populated by JS -->
+                  </div>
+                </div>
+                <p>Based on <span id="detail-reviews-num">142</span> verified jobs completed through Servify.</p>
+              </div>
+              
+              <div class="reviews-list-container" id="detail-reviews-list">
+                <!-- Reviews populated dynamically -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Right Column: Interactive Booking Engine -->
+          <div class="detail-booking-sidebar">
+            <div class="booking-sticky-card">
+              <h3>Book Service</h3>
+              <p class="card-desc">Select services, schedule a time & place, and confirm.</p>
+              
+              <!-- 1. Select Services (Checklist or Custom) -->
+              <div class="booking-step-group">
+                <label class="step-section-title">1. Booking Method</label>
+                <div class="booking-pricing-mode-toggle mb-4">
+                  <label class="radio-label">
+                    <input type="radio" name="booking-mode" value="standard" checked> <span>Standard Rates</span>
+                  </label>
+                  <label class="radio-label">
+                    <input type="radio" name="booking-mode" value="custom"> <span>Agreed Phone Price</span>
+                  </label>
+                </div>
+
+                <div id="booking-standard-pricing-panel">
+                  <label class="step-section-title">Select Services Needed</label>
+                  <div class="service-checklist-group" id="booking-services-list">
+                    <!-- Populate pricing list checkboxes -->
+                  </div>
+                </div>
+
+                <div id="booking-custom-pricing-panel" class="hidden mt-4">
+                  <label for="booking-custom-rate" class="step-section-title">Enter Agreed Price ($)</label>
+                  <input type="number" id="booking-custom-rate" class="form-input-small mt-2" placeholder="Amount discussed on phone" min="1">
+                  <span class="call-hint-text mt-2">Process payments on Servify for warranty protection.</span>
+                </div>
+              </div>
+
+              <!-- 2. Select Date and Time -->
+              <div class="booking-step-group">
+                <label class="step-section-title">2. Select Schedule</label>
+                <div class="date-time-flex">
+                  <div class="date-picker-wrapper">
+                    <label for="booking-date" class="input-label-small">Date</label>
+                    <input type="date" id="booking-date" class="form-input-small">
+                  </div>
+                  
+                  <div class="time-picker-wrapper">
+                    <label for="booking-time" class="input-label-small">Preferred Time</label>
+                    <select id="booking-time" class="form-input-small">
+                      <option value="09:00 AM">09:00 AM</option>
+                      <option value="10:00 AM">10:00 AM</option>
+                      <option value="11:00 AM">11:00 AM</option>
+                      <option value="12:00 PM">12:00 PM</option>
+                      <option value="01:00 PM">01:00 PM</option>
+                      <option value="02:00 PM">02:00 PM</option>
+                      <option value="03:00 PM">03:00 PM</option>
+                      <option value="04:00 PM">04:00 PM</option>
+                      <option value="05:00 PM">05:00 PM</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 3. Dynamic Calculation -->
+              <div class="pricing-summary-card">
+                <div class="price-calc-row">
+                  <span>Selected Services Subtotal:</span>
+                  <span>$<span id="booking-subtotal">0</span></span>
+                </div>
+                <div class="price-calc-row">
+                  <span>Service Fee:</span>
+                  <span>$5.00</span>
+                </div>
+                <hr class="price-divider">
+                <div class="price-calc-row total-row">
+                  <span>Estimated Total:</span>
+                  <span>$<span id="booking-total-price">5.00</span></span>
+                </div>
+              </div>
+
+              <!-- Book Action -->
+              <button class="btn btn-primary btn-full mt-4" id="submit-booking-btn" disabled>
+                Confirm and Request Booking
+              </button>
+              <p class="disclaimer text-center mt-2">No money is charged now. You pay only after the service is completed.</p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. USER DASHBOARD VIEW (MY BOOKINGS & CHAT) -->
+    <section id="user-dashboard-view" class="view-panel">
+      <div class="container dashboard-wrapper">
+        <h1 class="view-title">My Customer Dashboard</h1>
+        
+        <div class="dashboard-tabs">
+          <button class="tab-btn active" data-tab="bookings-tab">My Bookings</button>
+          <button class="tab-btn" data-tab="chat-tab" id="user-chat-tab-trigger">Direct Messages <span class="badge badge-pulse" id="unread-dot"></span></button>
+        </div>
+
+        <!-- TAB CONTENT: MY BOOKINGS -->
+        <div id="bookings-tab" class="dashboard-tab-content active">
+          <div class="bookings-grid-list" id="user-bookings-container">
+            <!-- Dynamically populated bookings list -->
+          </div>
+        </div>
+
+        <!-- TAB CONTENT: MOCK DIRECT MESSAGES -->
+        <div id="chat-tab" class="dashboard-tab-content">
+          <div class="chat-layout">
+            <!-- Sidebar Chat List -->
+            <div class="chat-sidebar-list" id="chat-contacts-list">
+              <!-- Dynamically populated contacts from active bookings -->
+            </div>
+            
+            <!-- Chat Window -->
+            <div class="chat-window-wrapper">
+              <div class="chat-window-header" id="chat-header-info">
+                <h3>Select a contact to chat</h3>
+              </div>
+              
+              <div class="chat-messages-container" id="chat-messages-box">
+                <div class="chat-empty-state">
+                  <i data-lucide="message-square" class="huge-icon"></i>
+                  <p>Choose an ongoing booking contact to discuss details.</p>
+                </div>
+              </div>
+              
+              <div class="chat-input-area hidden" id="chat-input-panel">
+                <input type="text" id="chat-input-text" placeholder="Type a message...">
+                <button class="btn btn-primary" id="chat-send-btn"><i data-lucide="send"></i></button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. PROVIDER DASHBOARD VIEW (PROVIDER PORTAL) -->
+    <section id="provider-dashboard-view" class="view-panel">
+      <div class="container dashboard-wrapper">
+        <div class="provider-banner-heading">
+          <div>
+            <span class="pro-tag">Partner Portal</span>
+            <h1 class="view-title">Provider Dashboard: <span class="gradient-text">Alex Mercer</span></h1>
+          </div>
+          <div class="status-indicator">
+            <span class="pulse-indicator"></span> Live Accepting Jobs
+          </div>
+        </div>
+
+        <!-- Grid layout: Earnings, job approvals, schedules -->
+        <div class="provider-grid">
+          
+          <!-- Earnings overview card -->
+          <div class="provider-card col-span-2">
+            <div class="card-header-flex">
+              <h3>Earnings Overview</h3>
+              <select class="form-input-small width-auto">
+                <option>This Month</option>
+                <option>Last Month</option>
+                <option>This Year</option>
+              </select>
+            </div>
+            
+            <div class="earnings-hero-row">
+              <div class="earnings-stat">
+                <span class="lbl">Net Take-Home Payout (85%)</span>
+                <span class="val" id="provider-net-payout">$1,207.00</span>
+              </div>
+              <div class="earnings-stat">
+                <span class="lbl">Gross Revenue</span>
+                <span class="val" id="provider-gross-billings">$1,420.00</span>
+              </div>
+              <div class="earnings-stat">
+                <span class="lbl">Servify Commission (15%)</span>
+                <span class="val" id="provider-commission-deducted">$213.00</span>
+              </div>
+              <div class="earnings-stat">
+                <span class="lbl">Jobs Completed</span>
+                <span class="val" id="provider-completed-count">12</span>
+              </div>
+            </div>
+
+            <!-- Custom CSS Chart mockup -->
+            <div class="chart-container-mock">
+              <div class="chart-bars-flex">
+                <div class="chart-bar-col"><div class="bar-fill" style="height: 40%"></div><span>Jan</span></div>
+                <div class="chart-bar-col"><div class="bar-fill" style="height: 60%"></div><span>Feb</span></div>
+                <div class="chart-bar-col"><div class="bar-fill" style="height: 50%"></div><span>Mar</span></div>
+                <div class="chart-bar-col"><div class="bar-fill" style="height: 80%"></div><span>Apr</span></div>
+                <div class="chart-bar-col"><div class="bar-fill" style="height: 95%"></div><span>May</span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Pending Job Requests List -->
+          <div class="provider-card">
+            <h3>Job Requests</h3>
+            <p class="card-subtitle">Accept or reject new customer bookings</p>
+            <div class="job-requests-list" id="provider-requests-container">
+              <!-- Dynamically populated requests -->
+            </div>
+          </div>
+
+          <!-- Active Jobs & Schedules -->
+          <div class="provider-card col-span-2">
+            <h3>My Active Schedule</h3>
+            <div class="schedule-calendar-list" id="provider-schedule-container">
+              <!-- Dynamically populated schedules -->
+            </div>
+          </div>
+
+          <!-- Edit Profile & Price list -->
+          <div class="provider-card">
+            <h3>Services & Custom Rates</h3>
+            <div class="rates-list-edit" id="provider-rates-container">
+              <!-- Dynamically populated and adjustable rates -->
+            </div>
+            <button class="btn btn-secondary btn-full mt-3" onclick="app.showToast('Rates saved successfully!')">Save Custom Rates</button>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Premium Footer -->
+  <footer class="app-footer">
+    <div class="container footer-grid">
+      <div class="footer-brand">
+        <a href="#" class="logo">
+          <span class="logo-icon">⚡</span>
+          <span class="logo-text">Servify</span>
+        </a>
+        <p class="brand-desc mt-2">Connecting homeowners with reliable local professionals for plumbing, electrical, carpentering, wallpapering, and painting needs.</p>
+      </div>
+      <div>
+        <h4>Quick Links</h4>
+        <ul class="footer-links">
+          <li><a href="#" onclick="app.navigate('explore-view')">Explore Pros</a></li>
+          <li><a href="#" onclick="app.navigate('landing-view')">Home Services</a></li>
+          <li><a href="#" onclick="app.navigate('user-dashboard-view')">My Bookings</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Safety & Trust</h4>
+        <ul class="footer-links">
+          <li><a href="#">Background Checks</a></li>
+          <li><a href="#">Servify Guarantee</a></li>
+          <li><a href="#">Help & Support</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom text-center container">
+      <p>&copy; 2026 Servify Inc. Made with ❤️ for verified local service providers.</p>
+    </div>
+  </footer>
+
+  <!-- App JavaScript files -->
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
