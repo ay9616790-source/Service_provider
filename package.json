@@ -5,7 +5,7 @@
   "main": "app.js",
   "scripts": {
     "start": "node server.js",
-    "serve": "npx serve ."
+    "serve": "npx -y serve -l 3000 ."
   },
   "keywords": [],
   "author": "",
