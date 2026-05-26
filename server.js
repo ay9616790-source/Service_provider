@@ -35,6 +35,11 @@ function writeDB(data) {
 
 // --- API ENDPOINTS ---
 
+// Friendly homepage check
+app.get('/', (req, res) => {
+  res.send('<h1>Servify Secure API Server</h1><p>The backend API is running successfully. Please open the frontend website at <a href="http://localhost:3000">http://localhost:3000</a> to use the app.</p>');
+});
+
 // 0. Silence chrome devtools debugging requests
 app.get('/.well-known/appspecific/com.chrome.devtools.json', (req, res) => {
   res.status(200).json({});
