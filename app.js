@@ -1269,15 +1269,19 @@ class ServifyApp {
             <div class="job-req-header" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem;">
               <span class="job-req-client" style="font-weight: 600;">Client: Abhishek K.</span>
               <div class="text-right">
-                <span class="job-req-price" style="font-size: 1.15rem; font-weight: 700; color: var(--primary);">$${req.totalPrice.toFixed(2)}</span>
+                <span class="job-req-price" id="total-${req.id}" style="font-size: 1.15rem; font-weight: 700; color: var(--primary);">$${req.totalPrice.toFixed(2)}</span>
                 <div class="provider-split-info" style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.15rem;">
-                  Payout: $${payout.toFixed(2)} (Fee: $${fee.toFixed(2)})
+                  Payout: <span id="payout-${req.id}">$${payout.toFixed(2)}</span> (Fee: <span id="fee-${req.id}">$${fee.toFixed(2)}</span>)
                 </div>
               </div>
             </div>
             <div class="job-req-details mb-4">
               <span><strong>Services:</strong> ${req.servicesSelected.map(s => s.name).join(', ')}</span>
               <span><strong>Schedule:</strong> ${req.date} at ${req.time}</span>
+              <div style="margin-top: 0.75rem; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary);">Confirm/Edit Price ($):</label>
+                <input type="number" id="negotiated-price-${req.id}" class="form-input-small negotiated-price-input" data-id="${req.id}" style="width: 80px; height: 1.8rem; padding: 0.2rem;" value="${subtotal.toFixed(2)}" min="1">
+              </div>
             </div>
             <div class="job-req-actions">
               <button class="btn btn-primary btn-small flex-grow-1" onclick="app.acceptJobRequest('${req.id}')">Accept Job</button>
@@ -1342,20 +1346,42 @@ class ServifyApp {
     const booking = this.state.bookings.find(b => b.id === bookingId);
     if (!booking) return;
 
+    // Get the negotiated price value from the input field
+    const priceInput = document.getElementById(`negotiated-price-${bookingId}`);
+    const negotiatedPrice = priceInput ? parseFloat(priceInput.value) : null;
+    
+    // Fallback if not valid number
+    const subtotal = (negotiatedPrice !== null && !isNaN(negotiatedPrice) && negotiatedPrice > 0) 
+      ? negotiatedPrice 
+      : (booking.subtotalPrice || (booking.totalPrice - 5.00));
+
     try {
       const response = await fetch(`${API_BASE_URL}/bookings/${bookingId}/accept`, {
-        method: 'POST'
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subtotalPrice: subtotal })
       });
       if (!response.ok) throw new Error('API accept failed');
       const updated = await response.json();
       booking.status = updated.status;
+      booking.subtotalPrice = updated.subtotalPrice;
+      booking.totalPrice = updated.totalPrice;
+      booking.platformCommission = updated.platformCommission;
+      booking.workerPayout = updated.workerPayout;
       booking.chatHistory = updated.chatHistory;
     } catch (err) {
       console.warn('API error, falling back to local simulation:', err);
       booking.status = 'accepted';
+      
+      // Update local price in offline simulation
+      booking.subtotalPrice = subtotal;
+      booking.platformCommission = subtotal * 0.15;
+      booking.workerPayout = subtotal * 0.85;
+      booking.totalPrice = subtotal + (booking.serviceFee || 5.00);
+
       booking.chatHistory.push({
         sender: 'provider',
-        text: "Great! I've accepted this request and added it to my calendar. See you then!",
+        text: `Great! I've accepted this request for $${booking.totalPrice.toFixed(2)} ($${subtotal.toFixed(2)} price + $5.00 service fee) and added it to my calendar. See you then!`,
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       });
     }
@@ -1415,6 +1441,31 @@ class ServifyApp {
 
   bindProviderDashboardEvents() {
     const ratesContainer = document.getElementById('provider-rates-container');
+    
+    // Live calculation for negotiated price input updates in job requests
+    const requestsContainer = document.getElementById('provider-requests-container');
+    if (requestsContainer) {
+      requestsContainer.addEventListener('input', (e) => {
+        if (e.target.classList.contains('negotiated-price-input')) {
+          const bookingId = e.target.getAttribute('data-id');
+          const val = parseFloat(e.target.value) || 0;
+          const payoutSpan = document.getElementById(`payout-${bookingId}`);
+          const feeSpan = document.getElementById(`fee-${bookingId}`);
+          const totalSpan = document.getElementById(`total-${bookingId}`);
+          
+          if (payoutSpan && feeSpan && totalSpan) {
+            const payout = val * 0.85;
+            const fee = val * 0.15;
+            const total = val + 5.00;
+            
+            payoutSpan.textContent = `$${payout.toFixed(2)}`;
+            feeSpan.textContent = `$${fee.toFixed(2)}`;
+            totalSpan.textContent = `$${total.toFixed(2)}`;
+          }
+        }
+      });
+    }
+
     if (!ratesContainer) return;
 
     ratesContainer.addEventListener('input', async (e) => {

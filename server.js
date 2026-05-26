@@ -160,6 +160,17 @@ app.post('/api/bookings/:id/accept', (req, res) => {
     return res.status(404).json({ error: 'Booking not found.' });
   }
 
+  const { subtotalPrice } = req.body;
+  if (subtotalPrice !== undefined) {
+    const subtotal = parseFloat(subtotalPrice);
+    if (!isNaN(subtotal) && subtotal > 0) {
+      booking.subtotalPrice = subtotal;
+      booking.platformCommission = subtotal * 0.15;
+      booking.workerPayout = subtotal * 0.85;
+      booking.totalPrice = subtotal + (booking.serviceFee || 5.00);
+    }
+  }
+
   booking.status = 'accepted';
   booking.chatHistory.push({
     sender: 'provider',
