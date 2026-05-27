@@ -367,7 +367,7 @@
       "platformCommission": 4.35,
       "workerPayout": 24.65,
       "totalPrice": 34,
-      "status": "pending",
+      "status": "completed",
       "chatHistory": [
         {
           "sender": "provider",
@@ -388,6 +388,16 @@
           "sender": "user",
           "text": "Yess come fast",
           "time": "11:36 pm"
+        },
+        {
+          "sender": "provider",
+          "text": "Great! I've accepted this request and added it to my calendar. See you then!",
+          "time": "12:02 pm"
+        },
+        {
+          "sender": "provider",
+          "text": "The job has been completed. Thank you for choosing Servify!",
+          "time": "12:02 pm"
         }
       ]
     },
@@ -414,7 +424,7 @@
       "platformCommission": 11.7,
       "workerPayout": 66.3,
       "totalPrice": 83,
-      "status": "pending",
+      "status": "cancelled",
       "chatHistory": [
         {
           "sender": "user",
