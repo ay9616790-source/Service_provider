@@ -425,51 +425,179 @@ app.post('/api/bookings/:id/chat', (req, res) => {
   res.json(booking);
 });
 
-// 8. Update Custom Rates (for provider ID 'p1' Alex Mercer)
-app.post('/api/providers/p1/rates', (req, res) => {
+// 8. Update Custom Rates (for provider ID)
+app.post('/api/providers/:id/rates', (req, res) => {
   const { pricingList } = req.body;
   if (!Array.isArray(pricingList)) {
     return res.status(400).json({ error: 'Invalid pricing list.' });
   }
 
   const db = readDB();
-  const alex = db.providers.find(p => p.id === 'p1');
-  if (!alex) {
-    return res.status(404).json({ error: 'Provider Alex Mercer not found.' });
+  const provider = db.providers.find(p => p.id === req.params.id);
+  if (!provider) {
+    return res.status(404).json({ error: 'Provider not found.' });
   }
 
-  alex.pricingList = pricingList;
+  provider.pricingList = pricingList;
   writeDB(db);
-  res.json({ success: true, pricingList: alex.pricingList });
+  res.json({ success: true, pricingList: provider.pricingList });
 });
 
-// 9. Update Provider p1 (Alex Mercer) Profile metadata
-app.post('/api/providers/p1/profile', (req, res) => {
+// 9. Update Provider Profile metadata
+app.post('/api/providers/:id/profile', (req, res) => {
   const { name, phone, tagline, bio } = req.body;
   if (!name || !phone || !tagline || !bio) {
     return res.status(400).json({ error: 'Missing required profile fields.' });
   }
 
   const db = readDB();
-  const alex = db.providers.find(p => p.id === 'p1');
-  if (!alex) {
-    return res.status(404).json({ error: 'Provider Alex Mercer not found.' });
+  const provider = db.providers.find(p => p.id === req.params.id);
+  if (!provider) {
+    return res.status(404).json({ error: 'Provider not found.' });
   }
 
-  alex.name = name;
-  alex.phone = phone;
-  alex.tagline = tagline;
-  alex.bio = bio;
+  provider.name = name;
+  provider.phone = phone;
+  provider.tagline = tagline;
+  provider.bio = bio;
 
   // Also update corresponding entries in bookings
   db.bookings.forEach(b => {
-    if (b.providerId === 'p1') {
+    if (b.providerId === req.params.id) {
       b.providerName = name;
     }
   });
 
   writeDB(db);
-  res.json({ success: true, provider: alex });
+  res.json({ success: true, provider: provider });
+});
+
+// --- AUTHENTICATION ENDPOINTS ---
+
+// Register Endpoint
+app.post('/api/auth/register', (req, res) => {
+  const { 
+    email, 
+    password, 
+    name, 
+    role, 
+    phone, 
+    society, 
+    providerCategory, 
+    providerHourlyRate, 
+    providerTagline, 
+    providerBio 
+  } = req.body;
+
+  if (!email || !password || !name || !role) {
+    return res.status(400).json({ error: 'Email, password, name and role are required.' });
+  }
+
+  if (role !== 'customer' && role !== 'provider') {
+    return res.status(400).json({ error: 'Role must be either "customer" or "provider".' });
+  }
+
+  const db = readDB();
+  db.users = db.users || [];
+
+  const existingUser = db.users.find(u => u.email.toLowerCase() === email.toLowerCase());
+  if (existingUser) {
+    return res.status(400).json({ error: 'Email is already registered.' });
+  }
+
+  const userId = 'u_' + Date.now();
+  let providerId = null;
+
+  if (role === 'provider') {
+    providerId = 'p_' + Date.now();
+    
+    // Create professional provider profile
+    const newProvider = {
+      id: providerId,
+      name: name,
+      category: providerCategory || 'electrician',
+      rating: 5.0,
+      reviewsCount: 0,
+      experience: 1,
+      hourlyRate: parseInt(providerHourlyRate) || 40,
+      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&h=200&fit=crop&q=80',
+      banner: 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=800&h=300&fit=crop&q=80',
+      tagline: providerTagline || `Certified ${providerCategory || 'professional'}`,
+      isVerified: false,
+      phone: phone || '',
+      societies: society ? [society] : ['gokuldham'],
+      bio: providerBio || `Professional offering quality service.`,
+      skills: [providerCategory ? providerCategory.charAt(0).toUpperCase() + providerCategory.slice(1) : 'General'],
+      pricingList: [
+        { 
+          id: 'srv_' + Date.now(), 
+          name: 'General Consultation & Repair', 
+          price: parseInt(providerHourlyRate) || 40 
+        }
+      ],
+      reviews: []
+    };
+
+    db.providers = db.providers || [];
+    db.providers.push(newProvider);
+  }
+
+  const newUser = {
+    id: userId,
+    email: email.toLowerCase(),
+    password: password, // In mock, plaintext is fine
+    name: name,
+    role: role,
+    phone: phone || '',
+    society: society || 'gokuldham',
+    avatar: role === 'provider' 
+      ? 'https://images.unsplash.com/photo-1540569014015-19a7be504e3a?w=200&h=200&fit=crop&q=80'
+      : 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&h=200&fit=crop&q=80',
+    providerId: providerId
+  };
+
+  db.users.push(newUser);
+  writeDB(db);
+
+  res.status(201).json({ success: true, user: newUser });
+});
+
+// Login Endpoint
+app.post('/api/auth/login', (req, res) => {
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    return res.status(400).json({ error: 'Email and password are required.' });
+  }
+
+  const db = readDB();
+  db.users = db.users || [];
+
+  const user = db.users.find(u => u.email.toLowerCase() === email.toLowerCase() && u.password === password);
+  if (!user) {
+    return res.status(401).json({ error: 'Invalid email or password.' });
+  }
+
+  let providerProfile = null;
+  if (user.role === 'provider' && user.providerId) {
+    db.providers = db.providers || [];
+    providerProfile = db.providers.find(p => p.id === user.providerId) || null;
+  }
+
+  res.json({
+    success: true,
+    user: {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+      phone: user.phone,
+      society: user.society,
+      avatar: user.avatar,
+      providerId: user.providerId,
+      providerProfile: providerProfile
+    }
+  });
 });
 
 // Start Express Server
