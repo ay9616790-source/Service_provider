@@ -38,6 +38,7 @@ class ServifyApp {
     this.bindAuthEvents();
 
     // 4. Perform Initial Renders
+    this.renderLoginProviderCard();
     this.renderCategories();
     this.renderSocietyOptions();
     this.checkQRSociety();
@@ -47,6 +48,30 @@ class ServifyApp {
     this.updateExploreResults();
     this.renderUserBookings();
     this.renderProviderDashboard();
+
+    // Wire Login Portal Buttons
+    const btnClient = document.getElementById('btn-login-client');
+    const btnProvider = document.getElementById('btn-login-provider');
+    const btnLogout = document.getElementById('btn-logout');
+
+    if (btnClient) {
+      btnClient.addEventListener('click', () => {
+        this.navigate('landing-view');
+        if (btnLogout) btnLogout.classList.remove('hidden');
+      });
+    }
+    if (btnProvider) {
+      btnProvider.addEventListener('click', () => {
+        this.navigate('provider-dashboard-view');
+        if (btnLogout) btnLogout.classList.remove('hidden');
+      });
+    }
+    if (btnLogout) {
+      btnLogout.addEventListener('click', () => {
+        btnLogout.classList.add('hidden');
+        this.navigate('login-view');
+      });
+    }
 
     // Initialize Lucide Icons
     if (window.lucide) {
@@ -309,6 +334,28 @@ class ServifyApp {
     setTimeout(() => {
       toast.classList.add('hidden');
     }, 3500);
+  }
+
+  // --- LOGIN CARD: Provider Info ---
+  renderLoginProviderCard() {
+    // Use the first/primary provider (p1) to show credentials
+    const pro = this.state.providers.find(p => p.id === 'p1') || this.state.providers[0];
+    if (!pro) return;
+
+    const phoneEl = document.getElementById('login-provider-phone');
+    const expEl = document.getElementById('login-provider-experience');
+    const ratingEl = document.getElementById('login-provider-rating');
+    const reviewsEl = document.getElementById('login-provider-reviews');
+    const taglineEl = document.getElementById('login-provider-tagline');
+
+    if (phoneEl) phoneEl.textContent = pro.phone || 'N/A';
+    if (expEl) expEl.textContent = `${pro.experience} yrs experience`;
+    if (ratingEl) ratingEl.textContent = pro.rating;
+    if (reviewsEl) reviewsEl.textContent = `(${pro.reviewsCount} reviews)`;
+    if (taglineEl) taglineEl.textContent = pro.tagline || 'Manage your jobs & earnings.';
+
+    // Re-render lucide icons inside the card
+    if (window.lucide) window.lucide.createIcons();
   }
 
   // --- LANDING VIEW RENDERING ---

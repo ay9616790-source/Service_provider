@@ -57,7 +57,7 @@
   "providers": [
     {
       "id": "p1",
-      "name": "Alex Mercer",
+      "name": "Rajesh Kumar Yadav",
       "category": "electrician",
       "rating": 4.9,
       "reviewsCount": 142,
@@ -67,7 +67,7 @@
       "banner": "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=800&h=300&fit=crop&q=80",
       "tagline": "Certified Industrial & Residential Electrician",
       "isVerified": true,
-      "phone": "+91 98765 43210",
+      "phone": "+91 9891486457",
       "societies": [
         "gokuldham",
         "green_valley"
@@ -351,7 +351,7 @@
     {
       "id": "b_1779789411537",
       "providerId": "p1",
-      "providerName": "Alex Mercer",
+      "providerName": "Rajesh Kumar Yadav",
       "providerCategory": "electrician",
       "providerAvatar": "https://images.unsplash.com/photo-1540569014015-19a7be504e3a?w=200&h=200&fit=crop&q=80",
       "date": "2026-05-26",
@@ -394,7 +394,7 @@
     {
       "id": "b_mock_1",
       "providerId": "p1",
-      "providerName": "Alex Mercer",
+      "providerName": "Rajesh Kumar Yadav",
       "providerCategory": "electrician",
       "providerAvatar": "https://images.unsplash.com/photo-1540569014015-19a7be504e3a?w=200&h=200&fit=crop&q=80",
       "date": "2026-05-28",
@@ -414,7 +414,7 @@
       "platformCommission": 11.7,
       "workerPayout": 66.3,
       "totalPrice": 83,
-      "status": "pending",
+      "status": "cancelled",
       "chatHistory": [
         {
           "sender": "user",
