@@ -367,7 +367,7 @@ class ServifyApp {
         <h3 class="service-home-title">${srv.name}</h3>
         <div class="service-home-footer">
           <span class="service-home-lbl">Starting from</span>
-          <strong class="service-home-price">$${srv.minPrice}</strong>
+          <strong class="service-home-price">₹${srv.minPrice}</strong>
         </div>
       </div>
     `).join('');
@@ -415,7 +415,7 @@ class ServifyApp {
             <p class="provider-card-tagline">${pro.tagline}</p>
             
             <div class="provider-card-footer">
-              <span class="provider-card-price"><span class="price-value-bold">$${pro.hourlyRate}</span>/hr</span>
+              <span class="provider-card-price"><span class="price-value-bold">₹${pro.hourlyRate}</span>/hr</span>
               <button class="btn btn-primary btn-small" onclick="app.viewProviderDetail('${pro.id}')">View Profile</button>
             </div>
           </div>
@@ -636,7 +636,7 @@ class ServifyApp {
               ${pro.isVerified ? `<span class="badge badge-verified"><i data-lucide="shield-check"></i> Verified</span>` : ''}
             </span>
             <div class="list-card-price-info">
-              <span class="provider-card-price"><span class="price-value-bold">$${pro.hourlyRate}</span>/hr</span>
+              <span class="provider-card-price"><span class="price-value-bold">₹${pro.hourlyRate}</span>/hr</span>
             </div>
           </div>
           <span class="provider-card-category">${this.getCategoryIcon(pro.category)} ${pro.category}</span>
@@ -766,7 +766,7 @@ class ServifyApp {
         <input type="checkbox" name="booking-service-item" value="${srv.id}" data-price="${srv.price}" data-name="${srv.name}">
         <div class="service-check-details">
           <span class="service-check-name">${srv.name}</span>
-          <span class="service-check-price">$${srv.price}</span>
+          <span class="service-check-price">₹${srv.price}</span>
         </div>
       </label>
     `).join('');
@@ -999,14 +999,14 @@ class ServifyApp {
                 <span><i data-lucide="clock"></i> ${b.time}</span>
               </div>
               <div class="booking-services-badges">
-                ${b.servicesSelected.map(s => `<span class="booking-service-tag">${s.name} ($${s.price})</span>`).join('')}
+                ${b.servicesSelected.map(s => `<span class="booking-service-tag">${s.name} (₹${s.price})</span>`).join('')}
               </div>
               <div class="booking-price-breakdown-row mt-2" style="font-size: 0.8rem; color: var(--text-secondary); display: flex; gap: 0.5rem; flex-wrap: wrap; opacity: 0.85;">
-                <span>Subtotal: $${(b.subtotalPrice || (b.totalPrice - 5.00)).toFixed(2)}</span>
+                <span>Subtotal: ₹${(b.subtotalPrice || (b.totalPrice - 5.00)).toFixed(2)}</span>
                 <span>•</span>
-                <span>Platform Fee: $${(b.serviceFee || 5.00).toFixed(2)}</span>
+                <span>Platform Fee: ₹${(b.serviceFee || 5.00).toFixed(2)}</span>
                 <span>•</span>
-                <strong style="color: var(--text-primary);">Total: $${b.totalPrice.toFixed(2)}</strong>
+                <strong style="color: var(--text-primary);">Total: ₹${b.totalPrice.toFixed(2)}</strong>
               </div>
             </div>
           </div>
@@ -1014,7 +1014,7 @@ class ServifyApp {
           <div class="booking-item-right">
             <span class="badge ${badgeClass}">${b.status}</span>
             <div class="text-right">
-              <span class="booking-price-tag">$${b.totalPrice.toFixed(2)}</span>
+              <span class="booking-price-tag">₹${b.totalPrice.toFixed(2)}</span>
               <div class="booking-actions-row">
                 <button class="btn btn-secondary btn-small" onclick="app.openChatFromBooking('${b.id}')"><i data-lucide="message-square"></i> Chat</button>
                 ${b.status === 'pending' ? `
@@ -1450,9 +1450,9 @@ class ServifyApp {
     const finalCommission = baseCommission + commissionAdded;
     const finalNet = baseNet + netAdded;
 
-    if (netPayoutValue) netPayoutValue.textContent = `$${finalNet.toFixed(2)}`;
-    if (grossBillingsValue) grossBillingsValue.textContent = `$${finalGross.toFixed(2)}`;
-    if (commissionDeductedValue) commissionDeductedValue.textContent = `$${finalCommission.toFixed(2)}`;
+    if (netPayoutValue) netPayoutValue.textContent = `₹${finalNet.toFixed(2)}`;
+    if (grossBillingsValue) grossBillingsValue.textContent = `₹${finalGross.toFixed(2)}`;
+    if (commissionDeductedValue) commissionDeductedValue.textContent = `₹${finalCommission.toFixed(2)}`;
     if (completedCountValue) completedCountValue.textContent = 12 + completedJobs.length;
 
     // 1. Render Pending Requests
@@ -1469,9 +1469,9 @@ class ServifyApp {
             <div class="job-req-header" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem;">
               <span class="job-req-client" style="font-weight: 600;">Client: Abhishek K.</span>
               <div class="text-right">
-                <span class="job-req-price" id="total-${req.id}" style="font-size: 1.15rem; font-weight: 700; color: var(--primary);">$${req.totalPrice.toFixed(2)}</span>
+                <span class="job-req-price" id="total-${req.id}" style="font-size: 1.15rem; font-weight: 700; color: var(--primary);">₹${req.totalPrice.toFixed(2)}</span>
                 <div class="provider-split-info" style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.15rem;">
-                  Payout: <span id="payout-${req.id}">$${payout.toFixed(2)}</span> (Fee: <span id="fee-${req.id}">$${fee.toFixed(2)}</span>)
+                  Payout: <span id="payout-${req.id}">₹${payout.toFixed(2)}</span> (Fee: <span id="fee-${req.id}">₹${fee.toFixed(2)}</span>)
                 </div>
               </div>
             </div>
@@ -1479,7 +1479,7 @@ class ServifyApp {
               <span><strong>Services:</strong> ${req.servicesSelected.map(s => s.name).join(', ')}</span>
               <span><strong>Schedule:</strong> ${req.date} at ${req.time}</span>
               <div style="margin-top: 0.75rem; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
-                <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary);">Confirm/Edit Price ($):</label>
+                <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary);">Confirm/Edit Price (₹):</label>
                 <input type="number" id="negotiated-price-${req.id}" class="form-input-small negotiated-price-input" data-id="${req.id}" style="width: 80px; height: 1.8rem; padding: 0.2rem;" value="${subtotal.toFixed(2)}" min="1">
               </div>
             </div>
@@ -1518,7 +1518,7 @@ class ServifyApp {
             </div>
             <div class="schedule-details">
               <h4>${job.servicesSelected.map(s => s.name).join(', ')}</h4>
-              <p>Client: Abhishek K. • ${job.time} • <strong style="color: var(--success);">Payout: $${payout.toFixed(2)}</strong></p>
+              <p>Client: Abhishek K. • ${job.time} • <strong style="color: var(--success);">Payout: ₹${payout.toFixed(2)}</strong></p>
             </div>
             <div>
               <button class="btn btn-primary btn-small" onclick="app.completeJob('${job.id}')">Complete Job</button>
@@ -1534,7 +1534,7 @@ class ServifyApp {
         <div class="rate-edit-row">
           <span class="rate-edit-name">${srv.name}</span>
           <div class="rate-edit-input-wrapper">
-            <span>$</span>
+            <span>₹</span>
             <input type="number" class="form-input-small text-right pr-input" value="${srv.price}" data-index="${index}">
           </div>
         </div>
@@ -1581,7 +1581,7 @@ class ServifyApp {
 
       booking.chatHistory.push({
         sender: 'provider',
-        text: `Great! I've accepted this request for $${booking.totalPrice.toFixed(2)} ($${subtotal.toFixed(2)} price + $5.00 service fee) and added it to my calendar. See you then!`,
+        text: `Great! I've accepted this request for ₹${booking.totalPrice.toFixed(2)} (₹${subtotal.toFixed(2)} price + ₹5.00 service fee) and added it to my calendar. See you then!`,
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       });
     }
@@ -1658,9 +1658,9 @@ class ServifyApp {
             const fee = val * 0.15;
             const total = val + 5.00;
             
-            payoutSpan.textContent = `$${payout.toFixed(2)}`;
-            feeSpan.textContent = `$${fee.toFixed(2)}`;
-            totalSpan.textContent = `$${total.toFixed(2)}`;
+            payoutSpan.textContent = `₹${payout.toFixed(2)}`;
+            feeSpan.textContent = `₹${fee.toFixed(2)}`;
+            totalSpan.textContent = `₹${total.toFixed(2)}`;
           }
         }
       });
