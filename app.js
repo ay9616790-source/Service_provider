@@ -16,7 +16,8 @@ class ServifyApp {
       selectedProviderId: null,
       activeChatBookingId: null,
       theme: 'light',
-      selectedSociety: 'all'
+      selectedSociety: 'all',
+      currentUser: null
     };
   }
 
@@ -34,6 +35,7 @@ class ServifyApp {
     this.bindProviderDashboardEvents();
     this.bindReviewEvents();
     this.initTheme();
+    this.bindAuthEvents();
 
     // 4. Perform Initial Renders
     this.renderCategories();
@@ -66,6 +68,16 @@ class ServifyApp {
       }
     }
 
+    // Load active logged in user session
+    const savedUser = localStorage.getItem('servify_currentUser');
+    if (savedUser) {
+      try {
+        this.state.currentUser = JSON.parse(savedUser);
+      } catch (e) {
+        console.error('Error loading current user from local storage:', e);
+      }
+    }
+
     // Load data from Backend API (with offline fallbacks)
     try {
       const providersRes = await fetch(`${API_BASE_URL}/providers`);
@@ -91,6 +103,9 @@ class ServifyApp {
         this.resetDefaultData();
       }
     }
+
+    // Update dynamic header states
+    this.updateAuthHeaders();
   }
 
   resetDefaultData() {
@@ -229,6 +244,25 @@ class ServifyApp {
   }
 
   navigate(viewId) {
+    // Auth Gates & Role Authorization Filter
+    if (viewId === 'user-dashboard-view') {
+      if (!this.state.currentUser) {
+        this.showToast('Please sign in to view your bookings.');
+        viewId = 'auth-view';
+      } else if (this.state.currentUser.role !== 'customer') {
+        this.showToast('Redirected: bookings are only accessible for Customer accounts.');
+        viewId = 'explore-view';
+      }
+    } else if (viewId === 'provider-dashboard-view') {
+      if (!this.state.currentUser) {
+        this.showToast('Please sign in to access the partner portal.');
+        viewId = 'auth-view';
+      } else if (this.state.currentUser.role !== 'provider') {
+        this.showToast('Redirected: Partner Portal is restricted to Service Providers.');
+        viewId = 'explore-view';
+      }
+    }
+
     this.state.currentView = viewId;
     
     // Toggle active view panel
@@ -845,6 +879,31 @@ class ServifyApp {
       const platformCommission = subtotal * 0.15; // 15% platform commission
       const workerPayout = subtotal * 0.85;       // 85% payout to worker/contractor
 
+      // Login Gate
+      if (!this.state.currentUser) {
+        this.state.pendingBookingDetails = {
+          providerId: selectedPro.id,
+          date: bookingDate,
+          time: bookingTime,
+          bookingMode: selectedMode,
+          servicesSelected: selectedServices,
+          customPrice: selectedMode === 'custom' ? subtotal : 0,
+          subtotal: subtotal,
+          totalPrice: totalPrice,
+          platformCommission: platformCommission,
+          workerPayout: workerPayout,
+          serviceFee: serviceFee
+        };
+        this.showToast('Please sign in or register to complete your booking.');
+        this.navigate('auth-view');
+        return;
+      }
+
+      if (this.state.currentUser.role !== 'customer') {
+        this.showToast('Please sign in as a Customer to book a professional.');
+        return;
+      }
+
       let newBooking;
       
       try {
@@ -886,7 +945,7 @@ class ServifyApp {
           totalPrice: totalPrice,
           status: 'pending',
           chatHistory: [
-            { sender: 'provider', text: `Hi Abhishek! I received your booking request for ${bookingDate} at ${bookingTime}. Can you share a bit more detail about the work or attach any photos?`, time: 'Just now' }
+            { sender: 'provider', text: `Hi ${this.state.currentUser.name}! I received your booking request for ${bookingDate} at ${bookingTime}. Can you share a bit more detail about the work or attach any photos?`, time: 'Just now' }
           ]
         };
       }
@@ -1340,12 +1399,14 @@ class ServifyApp {
     
     if (!requestsContainer) return;
 
-    const alexMercer = this.state.providers.find(p => p.id === 'p1');
-    if (alexMercer) {
+    const providerId = (this.state.currentUser && this.state.currentUser.providerId) || 'p1';
+
+    const activeProvider = this.state.providers.find(p => p.id === providerId);
+    if (activeProvider) {
       // Update portal header name dynamically
       const titleName = document.getElementById('provider-dashboard-title-name');
       if (titleName) {
-        titleName.textContent = alexMercer.name || 'Alex Mercer';
+        titleName.textContent = activeProvider.name || 'Alex Mercer';
       }
 
       // Pre-populate update profile form inputs
@@ -1354,17 +1415,17 @@ class ServifyApp {
       const taglineInput = document.getElementById('edit-pro-tagline');
       const bioInput = document.getElementById('edit-pro-bio');
 
-      if (nameInput && document.activeElement !== nameInput) nameInput.value = alexMercer.name || '';
-      if (phoneInput && document.activeElement !== phoneInput) phoneInput.value = alexMercer.phone || '';
-      if (taglineInput && document.activeElement !== taglineInput) taglineInput.value = alexMercer.tagline || '';
-      if (bioInput && document.activeElement !== bioInput) bioInput.value = alexMercer.bio || '';
+      if (nameInput && document.activeElement !== nameInput) nameInput.value = activeProvider.name || '';
+      if (phoneInput && document.activeElement !== phoneInput) phoneInput.value = activeProvider.phone || '';
+      if (taglineInput && document.activeElement !== taglineInput) taglineInput.value = activeProvider.tagline || '';
+      if (bioInput && document.activeElement !== bioInput) bioInput.value = activeProvider.bio || '';
     }
 
-    // Filter requests matching the default logged-in provider (Alex Mercer, id: 'p1')
-    const alexBookings = this.state.bookings.filter(b => b.providerId === 'p1');
-    const pendingRequests = alexBookings.filter(b => b.status === 'pending');
-    const acceptedJobs = alexBookings.filter(b => b.status === 'accepted');
-    const completedJobs = alexBookings.filter(b => b.status === 'completed');
+    // Filter requests matching the active logged-in provider
+    const proBookings = this.state.bookings.filter(b => b.providerId === providerId);
+    const pendingRequests = proBookings.filter(b => b.status === 'pending');
+    const acceptedJobs = proBookings.filter(b => b.status === 'accepted');
+    const completedJobs = proBookings.filter(b => b.status === 'completed');
 
     // Compute mock earnings
     let baseGross = 1420.00;
@@ -1612,17 +1673,18 @@ class ServifyApp {
         const index = parseInt(e.target.getAttribute('data-index'));
         const newPrice = parseFloat(e.target.value) || 0;
         
-        const alex = this.state.providers.find(p => p.id === 'p1');
-        if (alex && alex.pricingList[index]) {
-          alex.pricingList[index].price = newPrice;
+        const providerId = (this.state.currentUser && this.state.currentUser.providerId) || 'p1';
+        const activePro = this.state.providers.find(p => p.id === providerId);
+        if (activePro && activePro.pricingList[index]) {
+          activePro.pricingList[index].price = newPrice;
           this.saveState();
 
           // Sync with server
           try {
-            await fetch(`${API_BASE_URL}/providers/p1/rates`, {
+            await fetch(`${API_BASE_URL}/providers/${providerId}/rates`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ pricingList: alex.pricingList })
+              body: JSON.stringify({ pricingList: activePro.pricingList })
             });
           } catch (err) {
             console.warn('Failed to sync rates with server:', err);
@@ -1647,17 +1709,19 @@ class ServifyApp {
           return;
         }
 
+        const providerId = (this.state.currentUser && this.state.currentUser.providerId) || 'p1';
+
         // 1. Update local state
-        const alex = this.state.providers.find(p => p.id === 'p1');
-        if (alex) {
-          alex.name = nameVal;
-          alex.phone = phoneVal;
-          alex.tagline = taglineVal;
-          alex.bio = bioVal;
+        const activePro = this.state.providers.find(p => p.id === providerId);
+        if (activePro) {
+          activePro.name = nameVal;
+          activePro.phone = phoneVal;
+          activePro.tagline = taglineVal;
+          activePro.bio = bioVal;
 
           // Sync with customer bookings locally
           this.state.bookings.forEach(b => {
-            if (b.providerId === 'p1') {
+            if (b.providerId === providerId) {
               b.providerName = nameVal;
             }
           });
@@ -1667,7 +1731,7 @@ class ServifyApp {
 
         // 2. Sync changes back to server database
         try {
-          const response = await fetch(`${API_BASE_URL}/providers/p1/profile`, {
+          const response = await fetch(`${API_BASE_URL}/providers/${providerId}/profile`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -1687,7 +1751,7 @@ class ServifyApp {
           if (resData.success && resData.provider) {
             // Update local memory state with details returned from backend
             const updatedPro = resData.provider;
-            const idx = this.state.providers.findIndex(p => p.id === 'p1');
+            const idx = this.state.providers.findIndex(p => p.id === providerId);
             if (idx !== -1) {
               this.state.providers[idx] = updatedPro;
             }
@@ -1706,6 +1770,391 @@ class ServifyApp {
         this.updateExploreResults();
         this.renderUserBookings();
       });
+    }
+  }
+
+  // --- AUTHENTICATION & SESSION MANAGEMENT ---
+
+  bindAuthEvents() {
+    const authForm = document.getElementById('auth-form');
+    if (authForm) {
+      authForm.addEventListener('submit', (e) => this.handleAuthSubmit(e));
+    }
+  }
+
+  updateAuthHeaders() {
+    const userBadge = document.getElementById('header-user-badge');
+    const loginBtn = document.getElementById('header-login-btn');
+    const avatarImg = document.getElementById('header-avatar');
+    const usernameSpan = document.getElementById('header-username');
+    
+    // Header select society toggle
+    const headerSocietyWrapper = document.querySelector('.society-selector-wrapper');
+
+    // Dashboard nav links
+    const bookingsNav = document.getElementById('nav-bookings');
+    const providerNav = document.getElementById('nav-provider-portal');
+
+    if (this.state.currentUser) {
+      const u = this.state.currentUser;
+      
+      // Update badge elements
+      if (avatarImg) avatarImg.src = u.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=80&h=80&fit=crop&q=80';
+      if (usernameSpan) usernameSpan.textContent = u.name;
+      
+      if (userBadge) userBadge.classList.remove('hidden');
+      if (loginBtn) loginBtn.classList.add('hidden');
+
+      // Adjust dynamic headers based on role
+      if (u.role === 'customer') {
+        if (bookingsNav) bookingsNav.classList.remove('hidden');
+        if (providerNav) providerNav.classList.add('hidden');
+        if (headerSocietyWrapper) {
+          headerSocietyWrapper.classList.remove('hidden');
+          // Match selected society
+          if (u.society) {
+            this.state.selectedSociety = u.society;
+            const headerSelect = document.getElementById('header-society-select');
+            const sidebarSelect = document.getElementById('filter-society');
+            if (headerSelect) headerSelect.value = u.society;
+            if (sidebarSelect) sidebarSelect.value = u.society;
+            this.saveState();
+          }
+        }
+      } else if (u.role === 'provider') {
+        if (bookingsNav) bookingsNav.classList.add('hidden');
+        if (providerNav) providerNav.classList.remove('hidden');
+        if (headerSocietyWrapper) headerSocietyWrapper.classList.add('hidden');
+      }
+    } else {
+      // Guest state
+      if (userBadge) userBadge.classList.add('hidden');
+      if (loginBtn) loginBtn.classList.remove('hidden');
+      if (bookingsNav) bookingsNav.classList.add('hidden');
+      if (providerNav) providerNav.classList.add('hidden');
+      if (headerSocietyWrapper) headerSocietyWrapper.classList.add('hidden');
+    }
+
+    if (window.lucide) {
+      window.lucide.createIcons();
+    }
+  }
+
+  toggleRegisterRoleFields(role) {
+    const providerFieldsGroup = document.getElementById('register-provider-fields-group');
+    const customerSocietyGroup = document.getElementById('register-society-group');
+    
+    const customerCard = document.getElementById('role-card-customer');
+    const providerCard = document.getElementById('role-card-provider');
+
+    if (role === 'provider') {
+      if (providerFieldsGroup) providerFieldsGroup.classList.remove('hidden');
+      if (customerSocietyGroup) customerSocietyGroup.classList.add('hidden');
+      if (providerCard) providerCard.classList.add('active');
+      if (customerCard) customerCard.classList.remove('active');
+      
+      // Update inputs inside providerCard
+      const inputRoleProvider = providerCard ? providerCard.querySelector('input') : null;
+      if (inputRoleProvider) inputRoleProvider.checked = true;
+    } else {
+      if (providerFieldsGroup) providerFieldsGroup.classList.add('hidden');
+      if (customerSocietyGroup) customerSocietyGroup.classList.remove('hidden');
+      if (customerCard) customerCard.classList.add('active');
+      if (providerCard) providerCard.classList.remove('active');
+      
+      // Update inputs inside customerCard
+      const inputRoleCustomer = customerCard ? customerCard.querySelector('input') : null;
+      if (inputRoleCustomer) inputRoleCustomer.checked = true;
+    }
+  }
+
+  switchAuthTab(tab) {
+    const tabLogin = document.getElementById('tab-login');
+    const tabRegister = document.getElementById('tab-register');
+    
+    const authTitle = document.getElementById('auth-title');
+    const authSubtitle = document.getElementById('auth-subtitle');
+    const submitBtn = document.getElementById('auth-submit-btn');
+    
+    // Dynamic groups to show/hide
+    const nameGroup = document.getElementById('register-name-group');
+    const phoneGroup = document.getElementById('register-phone-group');
+    const roleSelectionGroup = document.getElementById('register-role-selection-group');
+    const societyGroup = document.getElementById('register-society-group');
+    const providerFieldsGroup = document.getElementById('register-provider-fields-group');
+
+    // Clear alert
+    const errorAlert = document.getElementById('auth-error-alert');
+    if (errorAlert) errorAlert.classList.add('hidden');
+
+    if (tab === 'register') {
+      if (tabRegister) tabRegister.classList.add('active');
+      if (tabLogin) tabLogin.classList.remove('active');
+      
+      if (authTitle) authTitle.textContent = 'Create Account';
+      if (authSubtitle) authSubtitle.textContent = 'Join Servify to book experts or offer services';
+      if (submitBtn) submitBtn.textContent = 'Register Now';
+
+      // Show Register fields
+      if (nameGroup) nameGroup.classList.remove('hidden');
+      if (phoneGroup) phoneGroup.classList.remove('hidden');
+      if (roleSelectionGroup) roleSelectionGroup.classList.remove('hidden');
+      
+      // Check current role selector state to show appropriate fields
+      const currentRole = document.querySelector('input[name="auth-role"]:checked')?.value || 'customer';
+      this.toggleRegisterRoleFields(currentRole);
+    } else {
+      if (tabLogin) tabLogin.classList.add('active');
+      if (tabRegister) tabRegister.classList.remove('active');
+      
+      if (authTitle) authTitle.textContent = 'Welcome Back';
+      if (authSubtitle) authSubtitle.textContent = 'Sign in to book pros and manage your schedules';
+      if (submitBtn) submitBtn.textContent = 'Sign In';
+
+      // Hide Register fields
+      if (nameGroup) nameGroup.classList.add('hidden');
+      if (phoneGroup) phoneGroup.classList.add('hidden');
+      if (roleSelectionGroup) roleSelectionGroup.classList.add('hidden');
+      if (societyGroup) societyGroup.classList.add('hidden');
+      if (providerFieldsGroup) providerFieldsGroup.classList.add('hidden');
+    }
+    
+    // Refresh dynamic icons
+    if (window.lucide) {
+      window.lucide.createIcons();
+    }
+  }
+
+  togglePasswordVisibility() {
+    const passwordInput = document.getElementById('auth-password');
+    const eyeIcon = document.getElementById('password-eye-icon');
+    if (passwordInput && eyeIcon) {
+      if (passwordInput.type === 'password') {
+        passwordInput.type = 'text';
+        eyeIcon.setAttribute('data-lucide', 'eye-off');
+      } else {
+        passwordInput.type = 'password';
+        eyeIcon.setAttribute('data-lucide', 'eye');
+      }
+      
+      if (window.lucide) {
+        window.lucide.createIcons();
+      }
+    }
+  }
+
+  logout() {
+    this.state.currentUser = null;
+    localStorage.removeItem('servify_currentUser');
+    this.updateAuthHeaders();
+    this.showToast('You have successfully logged out.');
+    this.navigate('landing-view');
+  }
+
+  async handleAuthSubmit(e) {
+    e.preventDefault();
+    const errorAlert = document.getElementById('auth-error-alert');
+    const errorText = document.getElementById('auth-error-text');
+    if (errorAlert) errorAlert.classList.add('hidden');
+
+    const loginTab = document.getElementById('tab-login');
+    const activeTab = loginTab && loginTab.classList.contains('active') ? 'login' : 'register';
+    const email = document.getElementById('auth-email').value.trim();
+    const password = document.getElementById('auth-password').value;
+
+    if (activeTab === 'login') {
+      try {
+        const response = await fetch(`${API_BASE_URL}/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+
+        if (!response.ok) {
+          const err = await response.json();
+          throw new Error(err.error || 'Invalid email or password.');
+        }
+
+        const data = await response.json();
+        if (data.success) {
+          this.state.currentUser = data.user;
+          localStorage.setItem('servify_currentUser', JSON.stringify(data.user));
+          this.updateAuthHeaders();
+          this.showToast(`Welcome back, ${data.user.name}!`);
+
+          // Seamless booking checkout check
+          if (this.state.pendingBookingDetails) {
+            await this.submitPendingBooking();
+          } else {
+            // Navigate based on role
+            if (data.user.role === 'customer') {
+              this.navigate('explore-view');
+            } else {
+              this.navigate('provider-dashboard-view');
+            }
+          }
+        }
+      } catch (err) {
+        if (errorAlert && errorText) {
+          errorText.textContent = err.message;
+          errorAlert.classList.remove('hidden');
+        }
+      }
+    } else {
+      // Register logic
+      const name = document.getElementById('auth-name').value.trim();
+      const phone = document.getElementById('auth-phone').value.trim();
+      const role = document.querySelector('input[name="auth-role"]:checked')?.value || 'customer';
+      const society = document.getElementById('auth-society').value;
+
+      // Provider details
+      const providerCategory = document.getElementById('auth-prov-category').value;
+      const providerHourlyRate = document.getElementById('auth-prov-rate').value;
+      const providerTagline = document.getElementById('auth-prov-tagline').value.trim();
+      const providerBio = document.getElementById('auth-prov-bio').value.trim();
+
+      if (!name) {
+        if (errorAlert && errorText) {
+          errorText.textContent = 'Please enter your full name.';
+          errorAlert.classList.remove('hidden');
+        }
+        return;
+      }
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/auth/register`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email,
+            password,
+            name,
+            role,
+            phone,
+            society,
+            providerCategory,
+            providerHourlyRate,
+            providerTagline,
+            providerBio
+          })
+        });
+
+        if (!response.ok) {
+          const err = await response.json();
+          throw new Error(err.error || 'Failed to register account.');
+        }
+
+        const data = await response.json();
+        if (data.success) {
+          // Dynamic auto-login after register!
+          this.state.currentUser = data.user;
+          localStorage.setItem('servify_currentUser', JSON.stringify(data.user));
+          
+          // Re-fetch dynamic providers so the newly registered provider is in the local state
+          await this.loadDynamicData();
+
+          this.updateAuthHeaders();
+          this.showToast(`Account created! Welcome to Servify, ${data.user.name}!`);
+
+          if (this.state.pendingBookingDetails) {
+            await this.submitPendingBooking();
+          } else {
+            if (data.user.role === 'customer') {
+              this.navigate('explore-view');
+            } else {
+              this.navigate('provider-dashboard-view');
+            }
+          }
+        }
+      } catch (err) {
+        if (errorAlert && errorText) {
+          errorText.textContent = err.message;
+          errorAlert.classList.remove('hidden');
+        }
+      }
+    }
+  }
+
+  async submitPendingBooking() {
+    const details = this.state.pendingBookingDetails;
+    if (!details) return;
+
+    const selectedPro = this.state.providers.find(p => p.id === details.providerId);
+    if (!selectedPro) {
+      this.state.pendingBookingDetails = null;
+      return;
+    }
+
+    let newBooking;
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/bookings`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          providerId: details.providerId,
+          date: details.date,
+          time: details.time,
+          bookingMode: details.bookingMode,
+          servicesSelected: details.bookingMode === 'standard' ? details.servicesSelected : [],
+          customPrice: details.bookingMode === 'custom' ? details.subtotal : 0
+        })
+      });
+
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || 'Failed to submit booking');
+      }
+
+      newBooking = await response.json();
+    } catch (err) {
+      console.warn('API error, falling back to local simulation:', err);
+      // Local simulation fallback
+      newBooking = {
+        id: 'b_' + Date.now(),
+        providerId: selectedPro.id,
+        providerName: selectedPro.name,
+        providerCategory: selectedPro.category,
+        providerAvatar: selectedPro.avatar,
+        date: details.date,
+        time: details.time,
+        servicesSelected: details.servicesSelected,
+        subtotalPrice: details.subtotal,
+        serviceFee: details.serviceFee,
+        platformCommission: details.platformCommission,
+        workerPayout: details.workerPayout,
+        totalPrice: details.totalPrice,
+        status: 'pending',
+        chatHistory: [
+          { sender: 'provider', text: `Hi ${this.state.currentUser.name}! I received your booking request for ${details.date} at ${details.time}. Can you share a bit more detail about the work or attach any photos?`, time: 'Just now' }
+        ]
+      };
+    }
+
+    // Add to bookings state
+    this.state.bookings.unshift(newBooking);
+    this.saveState();
+    
+    this.state.pendingBookingDetails = null; // Clear queue
+    this.showToast(`Booking request sent to ${selectedPro.name}!`);
+    
+    // Auto-jump to customer dashboard
+    this.navigate('user-dashboard-view');
+    
+    // Trigger a visual update on the provider portal notifications
+    this.renderProviderDashboard();
+  }
+
+  async loadDynamicData() {
+    try {
+      const providersRes = await fetch(`${API_BASE_URL}/providers`);
+      const providersData = await providersRes.json();
+      this.state.providers = providersData.providers;
+      
+      const bookingsRes = await fetch(`${API_BASE_URL}/bookings`);
+      this.state.bookings = await bookingsRes.json();
+    } catch (err) {
+      console.warn('Error reloading dynamic providers/bookings:', err);
     }
   }
 }

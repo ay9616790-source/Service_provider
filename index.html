@@ -49,10 +49,16 @@
           <i data-lucide="sun" class="sun-icon"></i>
           <i data-lucide="moon" class="moon-icon"></i>
         </button>
-        <!-- Quick Profile -->
-        <div class="user-profile-badge">
-          <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&h=80&fit=crop&q=80" alt="User Avatar" class="small-avatar">
-          <span class="profile-name">Abhishek K.</span>
+        <!-- Quick Profile Badge / Login trigger -->
+        <div id="header-auth-actions" class="header-auth-flex">
+          <button id="header-login-btn" class="btn btn-primary btn-small" onclick="app.navigate('auth-view')">Sign In</button>
+          <div id="header-user-badge" class="user-profile-badge hidden">
+            <img id="header-avatar" src="" alt="User Avatar" class="small-avatar">
+            <span id="header-username" class="profile-name"></span>
+            <button id="header-logout-btn" class="btn-logout-small" title="Logout" onclick="app.logout()">
+              <i data-lucide="log-out"></i>
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -601,6 +607,159 @@
             </form>
           </div>
 
+        </div>
+      </div>
+    </section>
+
+    <!-- 6. AUTHENTICATION VIEW (LOGIN & REGISTER) -->
+    <section id="auth-view" class="view-panel">
+      <div class="auth-container">
+        <div class="auth-blur-circle auth-blur-1"></div>
+        <div class="auth-blur-circle auth-blur-2"></div>
+        
+        <div class="auth-card">
+          <div class="auth-header-logo">
+            <span class="logo-icon">⚡</span>
+            <span class="logo-text">Servify</span>
+          </div>
+          
+          <h2 id="auth-title" class="auth-main-title">Welcome Back</h2>
+          <p id="auth-subtitle" class="auth-sub-title">Sign in to book pros and manage your schedules</p>
+          
+          <!-- Slide Toggle Tab -->
+          <div class="auth-tab-switch">
+            <div class="auth-tab-bg"></div>
+            <button type="button" class="auth-tab-btn active" id="tab-login" onclick="app.switchAuthTab('login')">Sign In</button>
+            <button type="button" class="auth-tab-btn" id="tab-register" onclick="app.switchAuthTab('register')">New Account</button>
+          </div>
+          
+          <!-- Auth Form -->
+          <form id="auth-form" class="auth-form-inputs">
+            <!-- Alert message area -->
+            <div id="auth-error-alert" class="alert-box error hidden">
+              <i data-lucide="alert-circle"></i>
+              <span id="auth-error-text">Incorrect password.</span>
+            </div>
+            
+            <!-- REGISTER ONLY: Role Selector Cards -->
+            <div id="register-role-selection-group" class="hidden">
+              <label class="input-label-small text-center mb-2 block">I want to join Servify as a:</label>
+              <div class="role-cards-row">
+                <label class="role-card active" id="role-card-customer">
+                  <input type="radio" name="auth-role" value="customer" checked onclick="app.toggleRegisterRoleFields('customer')">
+                  <div class="role-card-inner">
+                    <i data-lucide="user" class="role-icon"></i>
+                    <span class="role-title">Customer</span>
+                    <span class="role-desc">Hire local experts</span>
+                  </div>
+                </label>
+                
+                <label class="role-card" id="role-card-provider">
+                  <input type="radio" name="auth-role" value="provider" onclick="app.toggleRegisterRoleFields('provider')">
+                  <div class="role-card-inner">
+                    <i data-lucide="shield-check" class="role-icon"></i>
+                    <span class="role-title">Partner</span>
+                    <span class="role-desc">Offer services & earn</span>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <!-- REGISTER ONLY: Full Name -->
+            <div class="form-group hidden" id="register-name-group">
+              <label for="auth-name" class="input-label-small">Full Name</label>
+              <div class="input-wrapper">
+                <i data-lucide="user" class="input-icon"></i>
+                <input type="text" id="auth-name" class="form-input-small" placeholder="Enter your full name">
+              </div>
+            </div>
+
+            <!-- Email -->
+            <div class="form-group">
+              <label for="auth-email" class="input-label-small">Email Address</label>
+              <div class="input-wrapper">
+                <i data-lucide="mail" class="input-icon"></i>
+                <input type="email" id="auth-email" class="form-input-small" placeholder="name@example.com" required>
+              </div>
+            </div>
+
+            <!-- Password -->
+            <div class="form-group">
+              <label for="auth-password" class="input-label-small">Password</label>
+              <div class="input-wrapper">
+                <i data-lucide="lock" class="input-icon"></i>
+                <input type="password" id="auth-password" class="form-input-small" placeholder="Enter password" required>
+                <button type="button" class="password-toggle-btn" onclick="app.togglePasswordVisibility()">
+                  <i data-lucide="eye" id="password-eye-icon"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- REGISTER ONLY: Phone Number -->
+            <div class="form-group hidden" id="register-phone-group">
+              <label for="auth-phone" class="input-label-small">Phone Number</label>
+              <div class="input-wrapper">
+                <i data-lucide="phone" class="input-icon"></i>
+                <input type="tel" id="auth-phone" class="form-input-small" placeholder="+91 XXXXX XXXXX">
+              </div>
+            </div>
+
+            <!-- REGISTER CUSTOMER ONLY: Society -->
+            <div class="form-group hidden" id="register-society-group">
+              <label for="auth-society" class="input-label-small">Select Home Society</label>
+              <div class="input-wrapper">
+                <i data-lucide="map-pin" class="input-icon"></i>
+                <select id="auth-society" class="form-input-small">
+                  <option value="gokuldham">Gokuldham Society</option>
+                  <option value="shanti_kunj">Shanti Kunj Heights</option>
+                  <option value="green_valley">Green Valley Apartments</option>
+                  <option value="royal_palms">Royal Palms Residency</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- REGISTER PROVIDER ONLY FIELDS -->
+            <div id="register-provider-fields-group" class="hidden">
+              <div class="form-group">
+                <label for="auth-prov-category" class="input-label-small">Service Category</label>
+                <div class="input-wrapper">
+                  <i data-lucide="briefcase" class="input-icon"></i>
+                  <select id="auth-prov-category" class="form-input-small">
+                    <option value="electrician">Electrician</option>
+                    <option value="carpenter">Carpenter</option>
+                    <option value="painter">Painter</option>
+                    <option value="wallpaper">Wallpaper Specialist</option>
+                    <option value="plumber">Plumber</option>
+                  </select>
+                </div>
+              </div>
+              
+              <div class="form-group">
+                <label for="auth-prov-rate" class="input-label-small">Hourly Rate ($)</label>
+                <div class="input-wrapper">
+                  <i data-lucide="dollar-sign" class="input-icon"></i>
+                  <input type="number" id="auth-prov-rate" class="form-input-small" placeholder="Hourly rate (e.g. 45)" min="1">
+                </div>
+              </div>
+              
+              <div class="form-group">
+                <label for="auth-prov-tagline" class="input-label-small">Professional Tagline</label>
+                <div class="input-wrapper">
+                  <i data-lucide="award" class="input-icon"></i>
+                  <input type="text" id="auth-prov-tagline" class="form-input-small" placeholder="e.g. Certified Expert Plumber">
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="auth-prov-bio" class="input-label-small">Biography / Pitch</label>
+                <textarea id="auth-prov-bio" class="form-input-small" style="height: 4rem; resize: vertical;" placeholder="Introduce your expertise to customers..."></textarea>
+              </div>
+            </div>
+
+            <button type="submit" id="auth-submit-btn" class="btn btn-primary btn-full mt-4">
+              Sign In
+            </button>
+          </form>
         </div>
       </div>
     </section>

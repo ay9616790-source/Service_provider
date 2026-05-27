@@ -373,6 +373,21 @@
           "sender": "provider",
           "text": "Hi Abhishek! I received your booking request for 2026-05-26 at 09:00 AM. Can you share a bit more detail about the work or attach any photos?",
           "time": "03:26 pm"
+        },
+        {
+          "sender": "user",
+          "text": "Hii\\",
+          "time": "11:35 pm"
+        },
+        {
+          "sender": "user",
+          "text": "Please come fast",
+          "time": "11:36 pm"
+        },
+        {
+          "sender": "user",
+          "text": "Yess come fast",
+          "time": "11:36 pm"
         }
       ]
     },
@@ -459,6 +474,28 @@
           "time": "3:30 PM"
         }
       ]
+    }
+  ],
+  "users": [
+    {
+      "id": "u_customer_1",
+      "email": "customer@servify.com",
+      "password": "password123",
+      "name": "Abhishek K.",
+      "role": "customer",
+      "society": "gokuldham",
+      "phone": "+91 98765 43299",
+      "avatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&h=80&fit=crop&q=80"
+    },
+    {
+      "id": "u_provider_1",
+      "email": "provider@servify.com",
+      "password": "password123",
+      "name": "Alex Mercer",
+      "role": "provider",
+      "providerId": "p1",
+      "phone": "+91 98765 43210",
+      "avatar": "https://images.unsplash.com/photo-1540569014015-19a7be504e3a?w=200&h=200&fit=crop&q=80"
     }
   ]
 }
