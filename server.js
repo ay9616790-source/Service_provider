@@ -445,8 +445,8 @@ app.post('/api/providers/:id/rates', (req, res) => {
 
 // 9. Update Provider Profile metadata
 app.post('/api/providers/:id/profile', (req, res) => {
-  const { name, phone, tagline, bio } = req.body;
-  if (!name || !phone || !tagline || !bio) {
+  const { name, phone, tagline, bio, avatar, experience, address } = req.body;
+  if (!name || !phone || !tagline || !bio || !avatar || experience === undefined || !address) {
     return res.status(400).json({ error: 'Missing required profile fields.' });
   }
 
@@ -460,11 +460,15 @@ app.post('/api/providers/:id/profile', (req, res) => {
   provider.phone = phone;
   provider.tagline = tagline;
   provider.bio = bio;
+  provider.avatar = avatar;
+  provider.experience = parseInt(experience) || 0;
+  provider.address = address;
 
   // Also update corresponding entries in bookings
   db.bookings.forEach(b => {
     if (b.providerId === req.params.id) {
       b.providerName = name;
+      b.providerAvatar = avatar;
     }
   });
 

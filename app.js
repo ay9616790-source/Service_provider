@@ -982,7 +982,8 @@ class ServifyApp {
           
           <div class="list-card-stats">
             <span class="list-card-stats-item"><i data-lucide="star" class="star-filled"></i> <strong>${pro.rating}</strong> (${pro.reviewsCount} reviews)</span>
-            <span class="list-card-stats-item"><i data-lucide="briefcase"></i> ${pro.experience} years experience</span>
+            <span class="list-card-stats-item"><i data-lucide="briefcase"></i> ${pro.experience} years exp</span>
+            <span class="list-card-stats-item"><i data-lucide="map-pin"></i> ${pro.address || (pro.societies && pro.societies.length > 0 ? pro.societies.map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(', ') : 'Gokuldham')}</span>
           </div>
         </div>
       </div>
@@ -1040,6 +1041,11 @@ class ServifyApp {
     document.getElementById('detail-bio').textContent = pro.bio;
     document.getElementById('detail-big-rating').textContent = pro.rating;
     document.getElementById('detail-reviews-num').textContent = pro.reviewsCount;
+    
+    const detailAddress = document.getElementById('detail-address');
+    if (detailAddress) {
+      detailAddress.textContent = pro.address || (pro.societies && pro.societies.length > 0 ? pro.societies.map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(', ') : 'Gokuldham Area');
+    }
 
     // Phone Call display update
     const callLink = document.getElementById('detail-phone-link');
@@ -1891,11 +1897,17 @@ class ServifyApp {
       const phoneInput = document.getElementById('edit-pro-phone');
       const taglineInput = document.getElementById('edit-pro-tagline');
       const bioInput = document.getElementById('edit-pro-bio');
+      const avatarInput = document.getElementById('edit-pro-avatar');
+      const experienceInput = document.getElementById('edit-pro-experience');
+      const addressInput = document.getElementById('edit-pro-address');
 
       if (nameInput && document.activeElement !== nameInput) nameInput.value = currentPro.name || '';
       if (phoneInput && document.activeElement !== phoneInput) phoneInput.value = currentPro.phone || '';
       if (taglineInput && document.activeElement !== taglineInput) taglineInput.value = currentPro.tagline || '';
       if (bioInput && document.activeElement !== bioInput) bioInput.value = currentPro.bio || '';
+      if (avatarInput && document.activeElement !== avatarInput) avatarInput.value = currentPro.avatar || '';
+      if (experienceInput && document.activeElement !== experienceInput) experienceInput.value = currentPro.experience !== undefined ? currentPro.experience : '';
+      if (addressInput && document.activeElement !== addressInput) addressInput.value = currentPro.address || '';
     }
 
     // Filter bookings assigned to active contractor ID
@@ -2451,8 +2463,11 @@ class ServifyApp {
         const phoneVal = document.getElementById('edit-pro-phone').value.trim();
         const taglineVal = document.getElementById('edit-pro-tagline').value.trim();
         const bioVal = document.getElementById('edit-pro-bio').value.trim();
+        const avatarVal = document.getElementById('edit-pro-avatar').value.trim();
+        const experienceVal = parseInt(document.getElementById('edit-pro-experience').value);
+        const addressVal = document.getElementById('edit-pro-address').value.trim();
 
-        if (!nameVal || !phoneVal || !taglineVal || !bioVal) {
+        if (!nameVal || !phoneVal || !taglineVal || !bioVal || !avatarVal || isNaN(experienceVal) || !addressVal) {
           this.showToast('Please fill in all profile fields.');
           return;
         }
@@ -2464,11 +2479,15 @@ class ServifyApp {
           activePro.phone = phoneVal;
           activePro.tagline = taglineVal;
           activePro.bio = bioVal;
+          activePro.avatar = avatarVal;
+          activePro.experience = experienceVal;
+          activePro.address = addressVal;
 
           // Sync with customer bookings locally
           this.state.bookings.forEach(b => {
             if (b.providerId === this.state.currentUserId) {
               b.providerName = nameVal;
+              b.providerAvatar = avatarVal;
             }
           });
 
@@ -2484,7 +2503,10 @@ class ServifyApp {
               name: nameVal,
               phone: phoneVal,
               tagline: taglineVal,
-              bio: bioVal
+              bio: bioVal,
+              avatar: avatarVal,
+              experience: experienceVal,
+              address: addressVal
             })
           });
 
