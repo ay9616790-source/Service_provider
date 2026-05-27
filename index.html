@@ -700,7 +700,7 @@
 
             <!-- REGISTER ONLY: Full Name -->
             <div class="form-group hidden" id="register-name-group">
-              <label for="auth-name" class="input-label-small">Full Name</label>
+              <label for="auth-name" class="input-label-small">Full Name <span style="color: #ef4444; font-weight: bold; margin-left: 0.15rem;">*</span></label>
               <div class="input-wrapper">
                 <i data-lucide="user" class="input-icon"></i>
                 <input type="text" id="auth-name" class="form-input-small" placeholder="Enter your full name">
@@ -709,7 +709,7 @@
 
             <!-- Email -->
             <div class="form-group">
-              <label for="auth-email" class="input-label-small">Email Address</label>
+              <label for="auth-email" class="input-label-small">Email Address <span style="color: #ef4444; font-weight: bold; margin-left: 0.15rem;">*</span></label>
               <div class="input-wrapper">
                 <i data-lucide="mail" class="input-icon"></i>
                 <input type="email" id="auth-email" class="form-input-small" placeholder="name@example.com" required>
@@ -718,7 +718,7 @@
 
             <!-- Password -->
             <div class="form-group">
-              <label for="auth-password" class="input-label-small">Password</label>
+              <label for="auth-password" class="input-label-small">Password <span style="color: #ef4444; font-weight: bold; margin-left: 0.15rem;">*</span></label>
               <div class="input-wrapper">
                 <i data-lucide="lock" class="input-icon"></i>
                 <input type="password" id="auth-password" class="form-input-small" placeholder="Enter password" required>
@@ -730,7 +730,7 @@
 
             <!-- REGISTER ONLY: Phone Number -->
             <div class="form-group hidden" id="register-phone-group">
-              <label for="auth-phone" class="input-label-small">Phone Number</label>
+              <label for="auth-phone" class="input-label-small">Phone Number <span style="color: #ef4444; font-weight: bold; margin-left: 0.15rem;">*</span></label>
               <div class="input-wrapper">
                 <i data-lucide="phone" class="input-icon"></i>
                 <input type="tel" id="auth-phone" class="form-input-small" placeholder="+91 XXXXX XXXXX">
@@ -739,22 +739,23 @@
 
             <!-- REGISTER CUSTOMER ONLY: Society -->
             <div class="form-group hidden" id="register-society-group">
-              <label for="auth-society" class="input-label-small">Select Home Society</label>
+              <label for="auth-society" class="input-label-small">Select or Type Home Society (Optional)</label>
               <div class="input-wrapper">
                 <i data-lucide="map-pin" class="input-icon"></i>
-                <select id="auth-society" class="form-input-small">
-                  <option value="gokuldham">Gokuldham Society</option>
-                  <option value="shanti_kunj">Shanti Kunj Heights</option>
-                  <option value="green_valley">Green Valley Apartments</option>
-                  <option value="royal_palms">Royal Palms Residency</option>
-                </select>
+                <input type="text" id="auth-society" class="form-input-small" list="societies-datalist" placeholder="Select or type society name...">
+                <datalist id="societies-datalist">
+                  <option value="Gokuldham Society"></option>
+                  <option value="Shanti Kunj Heights"></option>
+                  <option value="Green Valley Apartments"></option>
+                  <option value="Royal Palms Residency"></option>
+                </datalist>
               </div>
             </div>
 
             <!-- REGISTER PROVIDER ONLY FIELDS -->
             <div id="register-provider-fields-group" class="hidden">
               <div class="form-group">
-                <label for="auth-prov-category" class="input-label-small">Service Category</label>
+                <label for="auth-prov-category" class="input-label-small">Service Category <span style="color: #ef4444; font-weight: bold; margin-left: 0.15rem;">*</span></label>
                 <div class="input-wrapper">
                   <i data-lucide="briefcase" class="input-icon"></i>
                   <select id="auth-prov-category" class="form-input-small">
@@ -768,7 +769,7 @@
               </div>
               
               <div class="form-group">
-                <label for="auth-prov-rate" class="input-label-small">Hourly Rate ($)</label>
+                <label for="auth-prov-rate" class="input-label-small">Hourly Rate ($) <span style="color: #ef4444; font-weight: bold; margin-left: 0.15rem;">*</span></label>
                 <div class="input-wrapper">
                   <i data-lucide="dollar-sign" class="input-icon"></i>
                   <input type="number" id="auth-prov-rate" class="form-input-small" placeholder="Hourly rate (e.g. 45)" min="1">
@@ -776,7 +777,7 @@
               </div>
               
               <div class="form-group">
-                <label for="auth-prov-tagline" class="input-label-small">Professional Tagline</label>
+                <label for="auth-prov-tagline" class="input-label-small">Professional Tagline <span style="color: #ef4444; font-weight: bold; margin-left: 0.15rem;">*</span></label>
                 <div class="input-wrapper">
                   <i data-lucide="award" class="input-icon"></i>
                   <input type="text" id="auth-prov-tagline" class="form-input-small" placeholder="e.g. Certified Expert Plumber">
@@ -784,7 +785,7 @@
               </div>
 
               <div class="form-group">
-                <label for="auth-prov-bio" class="input-label-small">Biography / Pitch</label>
+                <label for="auth-prov-bio" class="input-label-small">Biography / Pitch <span style="color: #ef4444; font-weight: bold; margin-left: 0.15rem;">*</span></label>
                 <textarea id="auth-prov-bio" class="form-input-small" style="height: 4rem; resize: vertical;" placeholder="Introduce your expertise to customers..."></textarea>
               </div>
             </div>

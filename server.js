@@ -525,7 +525,7 @@ app.post('/api/auth/register', (req, res) => {
       tagline: providerTagline || `Certified ${providerCategory || 'professional'}`,
       isVerified: false,
       phone: phone || '',
-      societies: society ? [society] : ['gokuldham'],
+      societies: society ? [society] : [],
       bio: providerBio || `Professional offering quality service.`,
       skills: [providerCategory ? providerCategory.charAt(0).toUpperCase() + providerCategory.slice(1) : 'General'],
       pricingList: [
@@ -549,7 +549,7 @@ app.post('/api/auth/register', (req, res) => {
     name: name,
     role: role,
     phone: phone || '',
-    society: society || 'gokuldham',
+    society: society || '',
     avatar: role === 'provider' 
       ? 'https://images.unsplash.com/photo-1540569014015-19a7be504e3a?w=200&h=200&fit=crop&q=80'
       : 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&h=200&fit=crop&q=80',

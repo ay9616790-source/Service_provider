@@ -250,7 +250,20 @@ class ServifyApp {
     const sidebarSelect = document.getElementById('filter-society');
     if (!headerSelect || !sidebarSelect) return;
 
-    const optionsHTML = SERVICES_DATA.societies.map(s => `
+    // Get societies list copy
+    const societies = [...SERVICES_DATA.societies];
+    
+    // If current logged-in user has a custom society, add it to the option list so it is selectable
+    if (this.state.currentUser && this.state.currentUser.society) {
+      const uSoc = this.state.currentUser.society;
+      const uSocLower = uSoc.toLowerCase();
+      const exists = societies.some(s => s.id === uSocLower || s.name.toLowerCase() === uSocLower);
+      if (!exists) {
+        societies.push({ id: uSocLower, name: uSoc });
+      }
+    }
+
+    const optionsHTML = societies.map(s => `
       <option value="${s.id}">${s.name}</option>
     `).join('');
 
@@ -274,7 +287,7 @@ class ServifyApp {
       if (val === 'all') {
         banner?.classList.add('hidden');
       } else {
-        const found = SERVICES_DATA.societies.find(s => s.id === val);
+        const found = societies.find(s => s.id === val);
         const bannerName = document.getElementById('society-banner-name');
         if (banner && bannerName && found) {
           bannerName.textContent = found.name;
@@ -286,8 +299,14 @@ class ServifyApp {
       }
     };
 
-    headerSelect.addEventListener('change', (e) => handleSocietyChange(e.target.value));
-    sidebarSelect.addEventListener('change', (e) => handleSocietyChange(e.target.value));
+    // Remove old listeners to prevent duplication
+    const newHeaderSelect = headerSelect.cloneNode(true);
+    headerSelect.parentNode.replaceChild(newHeaderSelect, headerSelect);
+    newHeaderSelect.addEventListener('change', (e) => handleSocietyChange(e.target.value));
+
+    const newSidebarSelect = sidebarSelect.cloneNode(true);
+    sidebarSelect.parentNode.replaceChild(newSidebarSelect, sidebarSelect);
+    newSidebarSelect.addEventListener('change', (e) => handleSocietyChange(e.target.value));
   }
 
   checkQRSociety() {
@@ -869,7 +888,7 @@ class ServifyApp {
     // Perform filter
     let results = this.state.providers.filter(pro => {
       // 0. Society filter
-      if (this.state.selectedSociety !== 'all') {
+      if (this.state.selectedSociety !== 'all' && this.state.selectedSociety !== '') {
         if (!pro.societies || !pro.societies.includes(this.state.selectedSociety)) {
           return false;
         }
@@ -2574,6 +2593,14 @@ class ServifyApp {
     const customerCard = document.getElementById('role-card-customer');
     const providerCard = document.getElementById('role-card-provider');
 
+    // Get input references
+    const rateInp = document.getElementById('auth-prov-rate');
+    const taglineInp = document.getElementById('auth-prov-tagline');
+    const bioInp = document.getElementById('auth-prov-bio');
+
+    const tabRegister = document.getElementById('tab-register');
+    const isRegisterMode = tabRegister && tabRegister.classList.contains('active');
+
     if (role === 'provider') {
       if (providerFieldsGroup) providerFieldsGroup.classList.remove('hidden');
       if (customerSocietyGroup) customerSocietyGroup.classList.add('hidden');
@@ -2583,6 +2610,11 @@ class ServifyApp {
       // Update inputs inside providerCard
       const inputRoleProvider = providerCard ? providerCard.querySelector('input') : null;
       if (inputRoleProvider) inputRoleProvider.checked = true;
+
+      // Set required fields for Provider only if in Register mode
+      if (rateInp) rateInp.required = isRegisterMode;
+      if (taglineInp) taglineInp.required = isRegisterMode;
+      if (bioInp) bioInp.required = isRegisterMode;
     } else {
       if (providerFieldsGroup) providerFieldsGroup.classList.add('hidden');
       if (customerSocietyGroup) customerSocietyGroup.classList.remove('hidden');
@@ -2592,6 +2624,11 @@ class ServifyApp {
       // Update inputs inside customerCard
       const inputRoleCustomer = customerCard ? customerCard.querySelector('input') : null;
       if (inputRoleCustomer) inputRoleCustomer.checked = true;
+
+      // Reset required fields for Provider
+      if (rateInp) rateInp.required = false;
+      if (taglineInp) taglineInp.required = false;
+      if (bioInp) bioInp.required = false;
     }
   }
 
@@ -2610,6 +2647,12 @@ class ServifyApp {
     const societyGroup = document.getElementById('register-society-group');
     const providerFieldsGroup = document.getElementById('register-provider-fields-group');
 
+    // Input references
+    const nameInp = document.getElementById('auth-name');
+    const phoneInp = document.getElementById('auth-phone');
+    const emailInp = document.getElementById('auth-email');
+    const passwordInp = document.getElementById('auth-password');
+
     // Clear alert
     const errorAlert = document.getElementById('auth-error-alert');
     if (errorAlert) errorAlert.classList.add('hidden');
@@ -2627,6 +2670,12 @@ class ServifyApp {
       if (phoneGroup) phoneGroup.classList.remove('hidden');
       if (roleSelectionGroup) roleSelectionGroup.classList.remove('hidden');
       
+      // Set required
+      if (nameInp) nameInp.required = true;
+      if (phoneInp) phoneInp.required = true;
+      if (emailInp) emailInp.required = true;
+      if (passwordInp) passwordInp.required = true;
+
       // Check current role selector state to show appropriate fields
       const currentRole = document.querySelector('input[name="auth-role"]:checked')?.value || 'customer';
       this.toggleRegisterRoleFields(currentRole);
@@ -2644,6 +2693,20 @@ class ServifyApp {
       if (roleSelectionGroup) roleSelectionGroup.classList.add('hidden');
       if (societyGroup) societyGroup.classList.add('hidden');
       if (providerFieldsGroup) providerFieldsGroup.classList.add('hidden');
+
+      // Clear required
+      if (nameInp) nameInp.required = false;
+      if (phoneInp) phoneInp.required = false;
+      if (emailInp) emailInp.required = true;
+      if (passwordInp) passwordInp.required = true;
+
+      // Reset provider required fields
+      const rateInp = document.getElementById('auth-prov-rate');
+      const taglineInp = document.getElementById('auth-prov-tagline');
+      const bioInp = document.getElementById('auth-prov-bio');
+      if (rateInp) rateInp.required = false;
+      if (taglineInp) taglineInp.required = false;
+      if (bioInp) bioInp.required = false;
     }
     
     // Refresh dynamic icons
@@ -2732,7 +2795,7 @@ class ServifyApp {
       const name = document.getElementById('auth-name').value.trim();
       const phone = document.getElementById('auth-phone').value.trim();
       const role = document.querySelector('input[name="auth-role"]:checked')?.value || 'customer';
-      const society = document.getElementById('auth-society').value;
+      const society = document.getElementById('auth-society').value.trim();
 
       // Provider details
       const providerCategory = document.getElementById('auth-prov-category').value;
@@ -2740,12 +2803,22 @@ class ServifyApp {
       const providerTagline = document.getElementById('auth-prov-tagline').value.trim();
       const providerBio = document.getElementById('auth-prov-bio').value.trim();
 
-      if (!name) {
+      if (!name || !phone) {
         if (errorAlert && errorText) {
-          errorText.textContent = 'Please enter your full name.';
+          errorText.textContent = 'Please fill in all mandatory fields (Name, Phone, Email, Password).';
           errorAlert.classList.remove('hidden');
         }
         return;
+      }
+
+      if (role === 'provider') {
+        if (!providerHourlyRate || !providerTagline || !providerBio) {
+          if (errorAlert && errorText) {
+            errorText.textContent = 'Please fill in all service provider fields marked with a star (*).';
+            errorAlert.classList.remove('hidden');
+          }
+          return;
+        }
       }
 
       try {
