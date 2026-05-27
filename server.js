@@ -10,6 +10,10 @@ const DB_PATH = path.join(__dirname, 'server', 'db.json');
 
 app.use(cors());
 app.use(express.json());
+app.use((req, res, next) => {
+  console.log(`[BACKEND] ${req.method} ${req.url}`);
+  next();
+});
 
 // Helper function to read database
 function readDB() {
@@ -45,6 +49,18 @@ app.get('/.well-known/appspecific/com.chrome.devtools.json', (req, res) => {
   res.status(200).json({});
 });
 
+// Error reporting route for frontend debug
+app.post('/api/log-error', (req, res) => {
+  console.error('\n=============================================');
+  console.error('!!! BROWSER RUNTIME ERROR DETECTED !!!');
+  console.error('Message:', req.body.message);
+  console.error('Source:', req.body.source, 'Line:', req.body.lineno, 'Col:', req.body.colno);
+  console.error('Stack Trace:');
+  console.error(req.body.stack);
+  console.error('=============================================\n');
+  res.status(200).json({});
+});
+
 // 1. Get initial configuration (categories, societies, current provider database status)
 app.get('/api/providers', (req, res) => {
   const db = readDB();
@@ -63,7 +79,7 @@ app.get('/api/bookings', (req, res) => {
 
 // 3. Securely create booking request & calculate platform split cuts
 app.post('/api/bookings', (req, res) => {
-  const { providerId, date, time, bookingMode, servicesSelected, customPrice } = req.body;
+  const { providerId, date, time, clientName, clientAddress, clientDescription, servicesSelected } = req.body;
   
   if (!providerId || !date || !time) {
     return res.status(400).json({ error: 'Missing required booking fields.' });
@@ -75,59 +91,42 @@ app.post('/api/bookings', (req, res) => {
     return res.status(404).json({ error: 'Selected provider not found.' });
   }
 
-  let subtotal = 0;
-  let finalizedServices = [];
-
-  if (bookingMode === 'custom') {
-    // Custom negotiated price over call
-    const rate = parseFloat(customPrice);
-    if (isNaN(rate) || rate <= 0) {
-      return res.status(400).json({ error: 'Invalid custom agreed price.' });
-    }
-    subtotal = rate;
-    finalizedServices = [{ name: 'Agreed Phone Rate', price: subtotal }];
-  } else {
-    // Standard rates mode: Validate pricing list items server-side to prevent tampering
-    if (!Array.isArray(servicesSelected) || servicesSelected.length === 0) {
-      return res.status(400).json({ error: 'No services selected.' });
-    }
-    
-    for (const service of servicesSelected) {
-      const match = provider.pricingList.find(item => item.name === service.name);
-      if (!match) {
-        return res.status(400).json({ error: `Service item '${service.name}' is not offered by this provider.` });
-      }
-      subtotal += match.price;
-      finalizedServices.push({ name: match.name, price: match.price });
-    }
-  }
-
+  const client = clientName || 'Abhishek K.';
   const serviceFee = 5.00;
-  const totalPrice = subtotal + serviceFee;
 
-  // Platform split logic (15% commission, 85% provider payout)
-  const platformCommission = subtotal * 0.15;
-  const workerPayout = subtotal * 0.85;
-
+  // New Inspection / Bid workflow
   const newBooking = {
     id: 'b_' + Date.now(),
     providerId: provider.id,
     providerName: provider.name,
     providerCategory: provider.category,
     providerAvatar: provider.avatar,
+    clientName: client,
+    clientAddress: clientAddress || 'Gokuldham Society, Building B, Room 402',
+    clientDescription: clientDescription || 'Regular maintenance inspection requested.',
     date,
     time,
-    servicesSelected: finalizedServices,
-    subtotalPrice: subtotal,
+    servicesSelected: servicesSelected || [{ name: 'On-site Inspection', price: 0 }],
+    subtotalPrice: 0,
     serviceFee: serviceFee,
-    platformCommission: platformCommission,
-    workerPayout: workerPayout,
-    totalPrice: totalPrice,
-    status: 'pending',
+    platformCommission: 0,
+    workerPayout: 0,
+    totalPrice: serviceFee, // Only service fee initially
+    status: 'pending', // pending, acknowledged, quoted, hired, completed, cancelled
+    acknowledgmentTimer: 120, // 120 seconds countdown
+    requestTimestamp: Date.now(),
+    currentPhase: 0, // 0: Requested, 1: Work Initiated, 2: Initial, 3: Middle, 4: Finished
+    phaseTimestamps: {},
+    workerCount: 0,
+    estimatedHours: 0,
+    contractorQuote: 0,
+    platformMarkup: 0,
+    paymentMode: null,
+    paymentCompleted: false,
     chatHistory: [
       {
         sender: 'provider',
-        text: `Hi Abhishek! I received your booking request for ${date} at ${time}. Can you share a bit more detail about the work or attach any photos?`,
+        text: `Hi ${client}! I received your request for a ${provider.category} inspection on ${date} at ${time}. I have 120 seconds to accept this lead!`,
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       }
     ]
@@ -137,6 +136,154 @@ app.post('/api/bookings', (req, res) => {
   writeDB(db);
 
   res.status(201).json(newBooking);
+});
+
+// 3.5 Contractor Acknowledge Lead
+app.post('/api/bookings/:id/acknowledge', (req, res) => {
+  const db = readDB();
+  const booking = db.bookings.find(b => b.id === req.params.id);
+  if (!booking) {
+    return res.status(404).json({ error: 'Booking not found.' });
+  }
+
+  booking.status = 'acknowledged';
+  booking.chatHistory.push({
+    sender: 'provider',
+    text: "Lead Acknowledged! I have secured your request and unlocked your address. I will now perform the site inspection to prepare your detailed quotation.",
+    time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  });
+
+  writeDB(db);
+  res.json(booking);
+});
+
+// 3.6 Contractor Upload Detailed Quotation
+app.post('/api/bookings/:id/quote', (req, res) => {
+  const { contractorQuote, workerCount, estimatedHours, quoteDetails } = req.body;
+  if (!contractorQuote || contractorQuote <= 0) {
+    return res.status(400).json({ error: 'Invalid quotation amount.' });
+  }
+
+  const db = readDB();
+  const booking = db.bookings.find(b => b.id === req.params.id);
+  if (!booking) {
+    return res.status(404).json({ error: 'Booking not found.' });
+  }
+
+  const quoteVal = parseFloat(contractorQuote);
+  const total = quoteVal;
+
+  booking.status = 'quoted';
+  booking.contractorQuote = quoteVal;
+  booking.subtotalPrice = quoteVal;
+  booking.platformMarkup = 0;
+  booking.platformCommission = 0; // zero platform commission
+  booking.workerPayout = quoteVal; // 100% payout to contractor
+  booking.workerCount = parseInt(workerCount) || 1;
+  booking.estimatedHours = parseInt(estimatedHours) || 2;
+  booking.totalPrice = total;
+  booking.servicesSelected = [{ name: quoteDetails || 'Contractor Work Quote', price: quoteVal }];
+
+  booking.chatHistory.push({
+    sender: 'provider',
+    text: `Quotation uploaded: $${quoteVal.toFixed(2)} Total. Estimated completion time is ${estimatedHours} hours using ${workerCount} employees. Please click Hire to initiate work!`,
+    time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  });
+
+  writeDB(db);
+  res.json(booking);
+});
+
+// 3.7 Client Hire (Approved Quote & Launch Project)
+app.post('/api/bookings/:id/hire', (req, res) => {
+  const db = readDB();
+  const booking = db.bookings.find(b => b.id === req.params.id);
+  if (!booking) {
+    return res.status(404).json({ error: 'Booking not found.' });
+  }
+
+  booking.status = 'hired';
+  booking.currentPhase = 1; // 1: Work Initiated
+  booking.phaseTimestamps = {
+    phase1_start: Date.now()
+  };
+
+  booking.chatHistory.push({
+    sender: 'system',
+    text: "Project officially HIRED and LAUNCHED! Progress phase set to Phase 1: Work Initiated.",
+    time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  });
+
+  writeDB(db);
+  res.json(booking);
+});
+
+// 3.8 Contractor Update Progress Phase
+app.post('/api/bookings/:id/progress', (req, res) => {
+  const { phase } = req.body;
+  const targetPhase = parseInt(phase);
+  if (![1, 2, 3, 4].includes(targetPhase)) {
+    return res.status(400).json({ error: 'Invalid phase value. Must be 1, 2, 3, or 4.' });
+  }
+
+  const db = readDB();
+  const booking = db.bookings.find(b => b.id === req.params.id);
+  if (!booking) {
+    return res.status(404).json({ error: 'Booking not found.' });
+  }
+
+  booking.currentPhase = targetPhase;
+  const key = `phase${targetPhase}_start`;
+  booking.phaseTimestamps = booking.phaseTimestamps || {};
+  booking.phaseTimestamps[key] = Date.now();
+
+  let textMsg = "";
+  if (targetPhase === 1) textMsg = "Progress Updated: Work Initiated (Phase 1)";
+  else if (targetPhase === 2) textMsg = "Progress Updated: Initial Phase (Phase 2)";
+  else if (targetPhase === 3) textMsg = "Progress Updated: Middle Phase (Phase 3)";
+  else if (targetPhase === 4) {
+    booking.status = 'payment_pending';
+    booking.phaseTimestamps.phase4_end = Date.now();
+    textMsg = "Progress Updated: Job Finished (Phase 4). Awaiting Client Payment!";
+  }
+
+  booking.chatHistory.push({
+    sender: 'provider',
+    text: textMsg,
+    time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  });
+
+  writeDB(db);
+  res.json(booking);
+});
+
+// 3.9 Client Process Payment & Add Payouts
+app.post('/api/bookings/:id/pay', (req, res) => {
+  const { paymentMode } = req.body;
+  const db = readDB();
+  const booking = db.bookings.find(b => b.id === req.params.id);
+  if (!booking) {
+    return res.status(404).json({ error: 'Booking not found.' });
+  }
+
+  booking.status = 'completed';
+  booking.paymentCompleted = true;
+  booking.paymentMode = paymentMode || 'direct';
+
+  booking.chatHistory.push({
+    sender: 'system',
+    text: `Direct payment of $${booking.totalPrice.toFixed(2)} completed successfully!`,
+    time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  });
+
+  booking.chatHistory.push({
+    sender: 'provider',
+    text: "Thank you for the payment and choosing Servify! The contract has been completed. Please rate my services!",
+    time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  });
+
+  writeDB(db);
+  res.json(booking);
 });
 
 // 4. Cancel booking (Customer action)

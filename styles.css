@@ -2311,3 +2311,92 @@ a:hover {
 .star-rating-selector .star-btn:hover {
   transform: scale(1.2);
 }
+
+/* --- Servify Pro Role Switcher & Marketplace Enhancements --- */
+
+/* Mock Profile selector cards inside auth modal */
+.profile-card-select {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.85rem 1.25rem;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.profile-card-select:hover {
+  transform: translateY(-2px);
+  border-color: var(--primary);
+  background: var(--primary-light);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.1);
+}
+.profile-card-select img {
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--border);
+}
+.profile-card-select div {
+  display: flex;
+  flex-direction: column;
+}
+.profile-card-select strong {
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.95rem;
+  color: var(--text-primary);
+}
+.profile-card-select span {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+/* Glowing high-priority job alert alerts */
+.glowing-request-card {
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4);
+  animation: pulse-glow 2.5s infinite cubic-bezier(0.66, 0, 0, 1), fadeIn 0.4s ease;
+}
+
+@keyframes pulse-glow {
+  0% {
+    box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.5);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(99, 102, 241, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(99, 102, 241, 0);
+  }
+}
+
+/* Red / Green active pulsing dot indicator */
+.pulse-indicator {
+  display: inline-block;
+  width: 0.5rem;
+  height: 0.5rem;
+  background-color: var(--primary);
+  border-radius: 50%;
+  margin-right: 0.35rem;
+  vertical-align: middle;
+  animation: dot-pulse 1.5s infinite ease-in-out;
+}
+
+@keyframes dot-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.4); opacity: 0.4; }
+}
+
+/* Lead countdown progress slider indicator */
+.countdown-ring-fill {
+  transition: width 1s linear;
+}
+
+/* Sub-panels inside modals */
+.request-form-panel {
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+

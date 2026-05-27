@@ -16,7 +16,13 @@ class ServifyApp {
       selectedProviderId: null,
       activeChatBookingId: null,
       theme: 'light',
-      selectedSociety: 'all'
+      selectedSociety: 'all',
+      
+      // Dynamic Role Sessions
+      currentUserRole: 'client', // 'client' or 'contractor'
+      currentUserId: 'c1', // e.g. 'c1', 'p1'
+      currentUserName: 'Abhishek K.',
+      currentUserAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&h=80&fit=crop&q=80'
     };
   }
 
@@ -34,6 +40,8 @@ class ServifyApp {
     this.bindProviderDashboardEvents();
     this.bindReviewEvents();
     this.initTheme();
+    this.initUserRoles(); // Init custom role features
+    this.startBackgroundLoops(); // Init live timer ticking loops
 
     // 4. Perform Initial Renders
     this.renderCategories();
@@ -61,6 +69,10 @@ class ServifyApp {
         const parsed = JSON.parse(savedState);
         this.state.theme = parsed.theme || 'light';
         this.state.selectedSociety = parsed.selectedSociety || 'all';
+        this.state.currentUserRole = parsed.currentUserRole || 'client';
+        this.state.currentUserId = parsed.currentUserId || 'c1';
+        this.state.currentUserName = parsed.currentUserName || 'Abhishek K.';
+        this.state.currentUserAvatar = parsed.currentUserAvatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&h=80&fit=crop&q=80';
       } catch (e) {
         console.error('Error loading settings from local storage:', e);
       }
@@ -107,8 +119,95 @@ class ServifyApp {
       providers: this.state.providers,
       bookings: this.state.bookings,
       theme: this.state.theme,
-      selectedSociety: this.state.selectedSociety
+      selectedSociety: this.state.selectedSociety,
+      currentUserRole: this.state.currentUserRole,
+      currentUserId: this.state.currentUserId,
+      currentUserName: this.state.currentUserName,
+      currentUserAvatar: this.state.currentUserAvatar
     }));
+  }
+
+  // --- USER ROLES & SESSION HANDLERS ---
+  initUserRoles() {
+    const switcherBtn = document.getElementById('role-switcher-btn');
+    const authModal = document.getElementById('auth-modal');
+
+    // Show auth modal on click switcher
+    if (switcherBtn && authModal) {
+      switcherBtn.addEventListener('click', () => {
+        authModal.classList.remove('hidden');
+      });
+    }
+
+    this.applyUserRoleSession();
+  }
+
+  applyUserRoleSession() {
+    const profileName = document.getElementById('header-profile-name');
+    const avatarImg = document.getElementById('header-avatar-img');
+    const navBar = document.getElementById('main-nav-bar');
+    const societyWrapper = document.getElementById('header-society-wrapper');
+
+    if (profileName) profileName.textContent = this.state.currentUserName;
+    if (avatarImg) avatarImg.src = this.state.currentUserAvatar;
+
+    if (!navBar) return;
+
+    if (this.state.currentUserRole === 'client') {
+      // Show client links
+      navBar.innerHTML = `
+        <a href="#" class="nav-link" data-target="landing-view" id="nav-link-home">Home</a>
+        <a href="#" class="nav-link" data-target="explore-view" id="nav-link-explore">Explore Pros</a>
+        <a href="#" class="nav-link" data-target="user-dashboard-view" id="nav-bookings">My Bookings</a>
+      `;
+      if (societyWrapper) societyWrapper.classList.remove('hidden');
+    } else {
+      // Show contractor links
+      navBar.innerHTML = `
+        <a href="#" class="nav-link active" data-target="provider-dashboard-view" id="nav-provider-portal">Provider Dashboard</a>
+        <a href="#" class="nav-link" data-target="user-dashboard-view" id="nav-bookings">Message Center</a>
+      `;
+      if (societyWrapper) societyWrapper.classList.add('hidden');
+    }
+
+    // Re-bind click event listeners to new nav links
+    this.initNavigation();
+  }
+
+  loginAs(role, id, name, avatar) {
+    this.state.currentUserRole = role;
+    this.state.currentUserId = id;
+    this.state.currentUserName = name;
+    this.state.currentUserAvatar = avatar;
+
+    const authModal = document.getElementById('auth-modal');
+    if (authModal) authModal.classList.add('hidden');
+
+    this.saveState();
+    this.applyUserRoleSession();
+    this.showToast(`Logged in successfully as ${name} (${role})`);
+
+    // Redirect to the appropriate portal
+    if (role === 'client') {
+      this.navigate('landing-view');
+    } else {
+      this.navigate('provider-dashboard-view');
+    }
+
+    // Force refresh displays
+    this.renderUserBookings();
+    this.renderProviderDashboard();
+    this.renderFeaturedProviders();
+    this.updateExploreResults();
+  }
+
+  // --- BACKGROUND TICKING LOOPS ---
+  startBackgroundLoops() {
+    // Ticking timers cleared to support a direct contractor workflow!
+  }
+
+  updateVisualCountdowns() {
+    // Countdowns cleared to support a direct contractor workflow!
   }
 
   // --- THEME ---
@@ -506,10 +605,220 @@ class ServifyApp {
   }
 
   quickSearch(catId) {
-    this.state.activeFilterCategory = catId;
-    const filterCat = document.getElementById('filter-category');
-    if (filterCat) filterCat.value = catId;
-    this.navigate('explore-view');
+    const modal = document.getElementById('category-contractors-modal');
+    const title = document.getElementById('category-modal-title');
+    const prosListContainer = document.getElementById('category-modal-pros-list');
+
+    if (!modal || !prosListContainer) return;
+
+    // Filter contractors matching category
+    const matchingPros = this.state.providers.filter(p => p.category === catId);
+    const categoryName = catId.charAt(0).toUpperCase() + catId.slice(1);
+    
+    if (title) title.textContent = `Available ${categoryName} Specialists`;
+    modal.classList.remove('hidden');
+
+    if (matchingPros.length === 0) {
+      prosListContainer.innerHTML = `<p class="text-muted text-center py-4">No verified partners in this category at the moment.</p>`;
+      return;
+    }
+
+    prosListContainer.innerHTML = matchingPros.map(pro => {
+      // Build reviews HTML
+      const reviewsHTML = pro.reviews && pro.reviews.length > 0
+        ? pro.reviews.map(rev => `
+            <div style="background: var(--bg-primary); border: 1px solid var(--border); padding: 0.75rem; border-radius: 0.5rem; margin-top: 0.5rem; font-size: 0.85rem;">
+              <div style="display: flex; justify-content: space-between; font-weight: 600; margin-bottom: 0.25rem;">
+                <span style="color: var(--text-primary);">${rev.author}</span>
+                <span style="color: var(--accent);">⭐ ${rev.rating}</span>
+              </div>
+              <p style="margin: 0; color: var(--text-secondary); line-height: 1.4;">"${rev.text}"</p>
+              <span style="font-size: 0.75rem; color: var(--text-muted); display: block; margin-top: 0.25rem;">${rev.date}</span>
+            </div>
+          `).join('')
+        : '<p class="text-muted" style="font-size: 0.85rem;">No customer reviews yet.</p>';
+
+      return `
+        <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 1rem; padding: 1.5rem; box-shadow: var(--card-shadow);">
+          <!-- Top: Info Row -->
+          <div style="display: flex; gap: 1rem; align-items: flex-start;">
+            <img src="${pro.avatar}" alt="${pro.name}" style="width: 4rem; height: 4rem; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary-light);">
+            <div style="flex-grow: 1;">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h4 style="font-size: 1.15rem; margin: 0; font-weight: 700; color: var(--text-primary);">${pro.name}</h4>
+                <span style="font-weight: 700; color: var(--primary); font-size: 1.1rem;">$${pro.hourlyRate}/hr</span>
+              </div>
+              <p class="text-muted" style="font-size: 0.85rem; margin: 0.15rem 0;">${pro.tagline}</p>
+              <div style="display: flex; gap: 0.75rem; font-size: 0.8rem; font-weight: 600; margin-top: 0.25rem;">
+                <span style="color: var(--accent);"><i data-lucide="star" style="display:inline; width:0.85rem; height:0.85rem; fill:var(--accent);"></i> ⭐ ${pro.rating} (${pro.reviewsCount} Reviews)</span>
+                <span style="color: var(--text-secondary);"><i data-lucide="briefcase" style="display:inline; width:0.85rem; height:0.85rem;"></i> ${pro.experience} Years Exp</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Mid: Skills -->
+          <div style="margin-top: 0.75rem; display: flex; flex-wrap: wrap; gap: 0.35rem;">
+            ${pro.skills.map(s => `<span style="font-size: 0.75rem; background: var(--bg-offset); border: 1px solid var(--border); padding: 0.15rem 0.5rem; border-radius: 0.25rem; font-weight: 500;">${s}</span>`).join('')}
+          </div>
+
+          <!-- Collapsible: Neighbor Comments -->
+          <div style="margin-top: 1rem; border-top: 1px solid var(--border); padding-top: 0.75rem;">
+            <strong style="font-size: 0.85rem; color: var(--text-primary); display: block; margin-bottom: 0.5rem;"><i data-lucide="message-square" style="display:inline; width:0.85rem; height:0.85rem; color:var(--primary);"></i> Neighbor Comments & Reviews</strong>
+            <div style="display: flex; flex-direction: column; gap: 0.5rem; max-height: 150px; overflow-y: auto; padding-right: 0.25rem;">
+              ${reviewsHTML}
+            </div>
+          </div>
+
+          <!-- Bottom: Expandable Request Form -->
+          <div style="margin-top: 1.25rem; border-top: 1px dashed var(--border); padding-top: 1rem; text-align: right;">
+            <button class="btn btn-primary btn-small" onclick="app.toggleRequestForm('${pro.id}')" id="btn-select-${pro.id}">
+              Select Contractor
+            </button>
+
+            <!-- Slide-down Request Form Panel -->
+            <div id="request-panel-${pro.id}" class="hidden text-left mt-3" style="background: var(--bg-offset); padding: 1.25rem; border-radius: 0.75rem; border: 1px solid var(--border); animation: fadeIn 0.3s ease;">
+              <h4 style="font-size: 0.95rem; font-weight: 700; margin-bottom: 0.75rem; color: var(--text-primary);">Inspection Request details</h4>
+              
+              <div class="form-group mb-3">
+                <label class="input-label-small" style="font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 0.25rem;">Your Address where inspection is held</label>
+                <input type="text" id="req-address-${pro.id}" class="form-input-small" style="width: 100%;" value="Gokuldham Society, Building B, Room 402" required>
+              </div>
+
+              <div class="form-group mb-3">
+                <label class="input-label-small" style="font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 0.25rem;">Describe the work/problem briefly</label>
+                <textarea id="req-desc-${pro.id}" class="form-input-small" style="width: 100%; height: 3.5rem; resize: vertical;" placeholder="e.g. Bathroom basin pipe leakage, Ceiling fan short circuit..." required></textarea>
+              </div>
+
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;" class="mb-4">
+                <div class="form-group">
+                  <label class="input-label-small" style="font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 0.25rem;">Inspection Date</label>
+                  <input type="date" id="req-date-${pro.id}" class="form-input-small" style="width: 100%;" required>
+                </div>
+                <div class="form-group">
+                  <label class="input-label-small" style="font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 0.25rem;">Inspection Time</label>
+                  <input type="time" id="req-time-${pro.id}" class="form-input-small" style="width: 100%;" value="10:00" required>
+                </div>
+              </div>
+
+              <button class="btn btn-primary btn-full" onclick="app.submitInspectionRequest('${pro.id}')" style="font-size: 0.9rem;">
+                Send Inspection Request (120s timer starts)
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    // Pre-populate date pickers in modal form
+    matchingPros.forEach(pro => {
+      const dateInp = document.getElementById(`req-date-${pro.id}`);
+      if (dateInp) {
+        const today = new Date().toISOString().split('T')[0];
+        dateInp.value = today;
+        dateInp.min = today;
+      }
+    });
+
+    if (window.lucide) window.lucide.createIcons();
+  }
+
+  closeCategoryModal() {
+    const modal = document.getElementById('category-contractors-modal');
+    if (modal) modal.classList.add('hidden');
+  }
+
+  toggleRequestForm(proId) {
+    const panel = document.getElementById(`request-panel-${proId}`);
+    const btn = document.getElementById(`btn-select-${proId}`);
+    if (panel) {
+      if (panel.classList.contains('hidden')) {
+        panel.classList.remove('hidden');
+        btn.textContent = "Cancel Selection";
+        btn.classList.add('btn-secondary');
+        btn.classList.remove('btn-primary');
+      } else {
+        panel.classList.add('hidden');
+        btn.textContent = "Select Contractor";
+        btn.classList.remove('btn-secondary');
+        btn.classList.add('btn-primary');
+      }
+    }
+  }
+
+  async submitInspectionRequest(proId) {
+    const address = document.getElementById(`req-address-${proId}`).value.trim();
+    const desc = document.getElementById(`req-desc-${proId}`).value.trim();
+    const dateVal = document.getElementById(`req-date-${proId}`).value;
+    const timeVal = document.getElementById(`req-time-${proId}`).value;
+
+    if (!address || !desc || !dateVal || !timeVal) {
+      this.showToast("Please fill in all inspection details.");
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/bookings`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          providerId: proId,
+          date: dateVal,
+          time: timeVal,
+          clientName: this.state.currentUserName,
+          clientAddress: address,
+          clientDescription: desc
+        })
+      });
+
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || 'Failed to submit inspection request.');
+      }
+
+      const newBooking = await response.json();
+      this.state.bookings.unshift(newBooking);
+    } catch (err) {
+      console.warn('API error, falling back to local simulation request creation:', err);
+      const pro = this.state.providers.find(p => p.id === proId);
+      const newBooking = {
+        id: 'b_' + Date.now(),
+        providerId: proId,
+        providerName: pro ? pro.name : 'Vetted Pro',
+        providerCategory: pro ? pro.category : 'Electrician',
+        providerAvatar: pro ? pro.avatar : 'https://images.unsplash.com/photo-1540569014015-19a7be504e3a?w=200&h=200&fit=crop&q=80',
+        clientName: this.state.currentUserName,
+        clientAddress: address,
+        clientDescription: desc,
+        date: dateVal,
+        time: timeVal,
+        servicesSelected: [{ name: 'On-site Inspection', price: 0 }],
+        subtotalPrice: 0,
+        serviceFee: 5.00,
+        platformCommission: 0,
+        workerPayout: 0,
+        totalPrice: 5.00,
+        status: 'pending',
+        acknowledgmentTimer: 120,
+        requestTimestamp: Date.now(),
+        currentPhase: 0,
+        phaseTimestamps: {},
+        chatHistory: [
+          {
+            sender: 'provider',
+            text: `Hi ${this.state.currentUserName}! I received your request for a ${pro ? pro.category : 'Electrician'} inspection. I have 120 seconds to accept this lead!`,
+            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          }
+        ]
+      };
+      this.state.bookings.unshift(newBooking);
+    }
+
+    this.saveState();
+    this.closeCategoryModal();
+    this.showToast(`Request sent to contractor!`);
+    
+    // Jump to dashboard
+    this.navigate('user-dashboard-view');
   }
 
   updateExploreResults() {
@@ -838,12 +1147,11 @@ class ServifyApp {
 
       const bookingDate = document.getElementById('booking-date').value;
       const bookingTime = document.getElementById('booking-time').value;
-      const serviceFee = 5.00;
-      const totalPrice = subtotal + serviceFee;
+      const totalPrice = subtotal;
 
-      // Platform commission split
-      const platformCommission = subtotal * 0.15; // 15% platform commission
-      const workerPayout = subtotal * 0.85;       // 85% payout to worker/contractor
+      // Platform commission split (Direct/No markup)
+      const platformCommission = 0;
+      const workerPayout = subtotal;
 
       let newBooking;
       
@@ -880,9 +1188,9 @@ class ServifyApp {
           time: bookingTime,
           servicesSelected: selectedServices,
           subtotalPrice: subtotal,
-          serviceFee: serviceFee,
-          platformCommission: platformCommission,
-          workerPayout: workerPayout,
+          serviceFee: 0,
+          platformCommission: 0,
+          workerPayout: subtotal,
           totalPrice: totalPrice,
           status: 'pending',
           chatHistory: [
@@ -910,67 +1218,210 @@ class ServifyApp {
     const container = document.getElementById('user-bookings-container');
     if (!container) return;
 
-    if (this.state.bookings.length === 0) {
+    // Filter bookings relevant to active user session
+    // If logged in as client, show their bookings. If logged in as contractor, show bookings assigned to them!
+    const activeBookings = this.state.bookings.filter(b => {
+      if (this.state.currentUserRole === 'client') {
+        // Show client's bookings (filter out based on client session in real life, or show all for testing Abhishek)
+        return true; 
+      } else {
+        // Contractor: only show bookings assigned to active contractor ID
+        return b.providerId === this.state.currentUserId;
+      }
+    });
+
+    if (activeBookings.length === 0) {
       container.innerHTML = `
         <div class="chat-empty-state">
           <i data-lucide="calendar-x" class="huge-icon"></i>
-          <p>You have no bookings scheduled.</p>
-          <button class="btn btn-primary mt-2" onclick="app.navigate('explore-view')">Explore Professionals</button>
+          <p>No bookings or active projects scheduled.</p>
+          ${this.state.currentUserRole === 'client' ? `
+            <button class="btn btn-primary mt-2" onclick="app.navigate('explore-view')">Explore Professionals</button>
+          ` : '<p class="text-muted" style="font-size:0.85rem;">Incoming requests will trigger live alert popups here.</p>'}
         </div>
       `;
       if (window.lucide) window.lucide.createIcons();
       return;
     }
 
-    container.innerHTML = this.state.bookings.map(b => {
+    container.innerHTML = activeBookings.map(b => {
       let badgeClass = 'badge-pending';
-      if (b.status === 'accepted') badgeClass = 'badge-accepted';
+      if (b.status === 'acknowledged') badgeClass = 'badge-accepted';
+      if (b.status === 'quoted') badgeClass = 'badge-accepted';
+      if (b.status === 'hired') badgeClass = 'badge-accepted';
+      if (b.status === 'payment_pending') badgeClass = 'badge-pending';
       if (b.status === 'completed') badgeClass = 'badge-completed';
       if (b.status === 'cancelled') badgeClass = 'badge-cancelled';
 
+      // Custom rendering block depending on multi-stage status
+      let workflowHTML = '';
+
+      if (b.status === 'pending') {
+        // Client sees "Awaiting Acknowledgment"
+        workflowHTML = `
+          <div style="background: var(--primary-light); border: 1px dashed var(--primary); padding: 1rem; border-radius: 0.5rem; margin-top: 1rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem;">
+            <div>
+              <span style="font-size: 0.8rem; font-weight: 700; color: var(--primary); text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 0.25rem;"><span class="pulse-indicator"></span> Awaiting Lead Acknowledgment</span>
+              <p style="margin: 0; font-size: 0.85rem; color: var(--text-secondary);">Waiting for the contractor to review and accept the inspection request.</p>
+            </div>
+          </div>
+        `;
+      } else if (b.status === 'acknowledged') {
+        // Client sees "Acknowledged - Inspection In Progress"
+        workflowHTML = `
+          <div style="background: var(--info-light); border: 1px dashed var(--info); padding: 1rem; border-radius: 0.5rem; margin-top: 1rem;">
+            <span style="font-size: 0.8rem; font-weight: 700; color: var(--info); text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 0.25rem;">🔍 Inspection in Progress</span>
+            <p style="margin: 0; font-size: 0.85rem; color: var(--text-secondary);">Contractor accepted the lead! Performing physical inspection at: <br><strong style="color: var(--text-primary);">${b.clientAddress}</strong></p>
+            <span style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-top: 0.5rem;"><i data-lucide="loader" style="width:0.8rem; height:0.8rem; display:inline; animation: logo-pulse 1.5s infinite;"></i> Awaiting detailed quotation upload...</span>
+          </div>
+        `;
+      } else if (b.status === 'quoted') {
+        // Client sees "Quote Received" with direct flat invoice breakdown
+        const labor = b.contractorQuote || 0;
+        const total = b.totalPrice || labor;
+
+        workflowHTML = `
+          <div style="background: var(--bg-offset); border: 1px solid var(--border); padding: 1.25rem; border-radius: 0.75rem; margin-top: 1rem;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem;">
+              <div>
+                <span style="font-size: 0.8rem; font-weight: 700; color: var(--success); text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 0.25rem;">📝 Detailed Quotation Received</span>
+                <p style="margin: 0; font-size: 0.85rem; color: var(--text-secondary);">Scope: ${b.servicesSelected[0].name}</p>
+              </div>
+              <div class="text-right">
+                <span style="font-size: 0.8rem; color: var(--text-muted); display: block;">Labor Force</span>
+                <strong style="font-size: 0.9rem; color: var(--text-primary);">${b.workerCount} Employees • ${b.estimatedHours} Hours</strong>
+              </div>
+            </div>
+            
+            <!-- Invoice Breakdown Table -->
+            <div style="background: var(--bg-secondary); border: 1px solid var(--border); padding: 0.75rem; border-radius: 0.5rem; font-size: 0.85rem; margin-bottom: 1rem;">
+              <div style="display: flex; justify-content: space-between; font-weight: 700; color: var(--text-primary); font-size: 0.95rem;">
+                <span>Total Project Quotation:</span>
+                <span>$${total.toFixed(2)}</span>
+              </div>
+            </div>
+
+            <!-- Client Action -->
+            ${this.state.currentUserRole === 'client' ? `
+              <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
+                <button class="btn btn-primary btn-small" onclick="app.hireContractor('${b.id}')" style="background: var(--success);"><i data-lucide="check-circle" style="width:0.85rem; height:0.85rem;"></i> Hire Contractor (Start Project)</button>
+                <button class="btn btn-secondary btn-small text-red" onclick="app.cancelBooking('${b.id}')" style="color:var(--danger); border-color:var(--danger-light);">Reject & Cancel</button>
+              </div>
+            ` : '<span style="font-size:0.8rem; color:var(--text-muted);"><i data-lucide="loader" style="width:0.8rem; height:0.8rem; display:inline;"></i> Awaiting Client approval (Hire request)...</span>'}
+          </div>
+        `;
+      } else if (b.status === 'hired') {
+        // Client sees the beautiful 4-Phase Progress Timeline Tracker!
+        const totalEstimatedHours = b.estimatedHours || 4;
+        const totalEstimatedSeconds = totalEstimatedHours * 60; // 1h = 60s for demo
+        const secondsPerPhase = Math.max(15, Math.floor(totalEstimatedSeconds / 4));
+        const activePercentage = b.currentPhase * 25; // Phase 1 = 25%, Phase 2 = 50%, Phase 3 = 75%, Phase 4 = 100%
+
+        workflowHTML = `
+          <div style="background: var(--bg-offset); border: 1px solid var(--border); padding: 1.25rem; border-radius: 0.75rem; margin-top: 1rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+              <span style="font-size: 0.8rem; font-weight: 700; color: var(--primary); text-transform: uppercase; letter-spacing: 0.05em; display: block;"><span class="pulse-indicator"></span> Active Work Progress: Phase ${b.currentPhase}/4</span>
+            </div>
+
+            <!-- Custom CSS Progress Bar Fill -->
+            <div style="width: 100%; height: 0.5rem; background: var(--border); border-radius: 9999px; margin-bottom: 1rem; overflow: hidden; position: relative;">
+              <div style="height: 100%; width: ${activePercentage}%; background: linear-gradient(90deg, var(--primary) 0%, var(--success) 100%); border-radius: 9999px; transition: width 0.5s ease;"></div>
+            </div>
+
+            <!-- Linear Phase Markers -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 0.5rem; text-align: center; font-size: 0.75rem; font-weight: 600; color: var(--text-muted);">
+              <span style="${b.currentPhase >= 1 ? 'color: var(--primary); font-weight: 700;' : ''}">1. Initiated</span>
+              <span style="${b.currentPhase >= 2 ? 'color: var(--primary); font-weight: 700;' : ''}">2. Initial Phase</span>
+              <span style="${b.currentPhase >= 3 ? 'color: var(--primary); font-weight: 700;' : ''}">3. Middle Phase</span>
+              <span style="${b.currentPhase >= 4 ? 'color: var(--success); font-weight: 700;' : ''}">4. Finished</span>
+            </div>
+
+            <!-- Contractor manual controls -->
+            ${this.state.currentUserRole === 'contractor' ? `
+              <div style="margin-top: 1rem; text-align: right;">
+                <button class="btn btn-primary btn-small" onclick="app.advanceProjectPhase('${b.id}')" style="font-size: 0.8rem; padding: 0.35rem 0.75rem;">
+                  <i data-lucide="chevron-right" style="width:0.85rem; height:0.85rem;"></i> Transition to Next Phase
+                </button>
+              </div>
+            ` : ''}
+          </div>
+        `;
+      } else if (b.status === 'payment_pending') {
+        // Client sees the invoice checkout card and payment buttons
+        workflowHTML = `
+          <div style="background: var(--accent-light); border: 1px dashed var(--accent); padding: 1.25rem; border-radius: 0.75rem; margin-top: 1rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+              <div>
+                <span style="font-size: 0.8rem; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 0.25rem;">🏁 Work Completed Successfully</span>
+                <p style="margin: 0; font-size: 0.85rem; color: var(--text-secondary);">All 4 phases finished. Awaiting payment settlement confirmation.</p>
+              </div>
+              <strong style="font-size: 1.2rem; color: var(--text-primary);">$${b.totalPrice.toFixed(2)}</strong>
+            </div>
+
+            ${this.state.currentUserRole === 'client' ? `
+              <div style="text-align: right; margin-top: 1rem;">
+                <button class="btn btn-primary btn-small" onclick="app.openPaymentModal('${b.id}')" style="background: var(--accent); border-color: var(--accent);">🏁 Confirm Direct Payment</button>
+              </div>
+            ` : '<span style="font-size: 0.8rem; color: var(--text-muted);"><i data-lucide="loader" style="width:0.8rem; height:0.8rem; display:inline;"></i> Awaiting Client payment settlement...</span>'}
+          </div>
+        `;
+      } else if (b.status === 'completed') {
+        // Completed state with invoice review indicator
+        workflowHTML = `
+          <div style="background: var(--success-light); border: 1px solid var(--success); padding: 0.85rem 1.25rem; border-radius: 0.75rem; margin-top: 1rem; display: flex; align-items: center; gap: 0.5rem; font-size: 0.88rem; color: #065f46;">
+            <span>🛡️ <strong>Insured Payment Secured!</strong> $${b.totalPrice.toFixed(2)} fully paid via ${b.paymentMode === 'online' ? 'Online Card Transfer' : 'Cash Payout'}. Work protected by 30-Day Workmanship Warranty.</span>
+          </div>
+        `;
+      }
+
       return `
-        <div class="booking-item-card" id="card-${b.id}">
-          <div class="booking-item-left">
-            <img src="${b.providerAvatar}" alt="${b.providerName}" class="booking-pro-avatar">
-            <div class="booking-details-txt">
-              <h3>${b.providerName}</h3>
-              <span class="provider-card-category">${this.getCategoryIcon(b.providerCategory)} ${b.providerCategory}</span>
-              <div class="booking-meta-row">
-                <span><i data-lucide="calendar"></i> ${b.date}</span>
-                <span><i data-lucide="clock"></i> ${b.time}</span>
-              </div>
-              <div class="booking-services-badges">
-                ${b.servicesSelected.map(s => `<span class="booking-service-tag">${s.name} ($${s.price})</span>`).join('')}
-              </div>
-              <div class="booking-price-breakdown-row mt-2" style="font-size: 0.8rem; color: var(--text-secondary); display: flex; gap: 0.5rem; flex-wrap: wrap; opacity: 0.85;">
-                <span>Subtotal: $${(b.subtotalPrice || (b.totalPrice - 5.00)).toFixed(2)}</span>
-                <span>•</span>
-                <span>Platform Fee: $${(b.serviceFee || 5.00).toFixed(2)}</span>
-                <span>•</span>
-                <strong style="color: var(--text-primary);">Total: $${b.totalPrice.toFixed(2)}</strong>
+        <div class="booking-item-card" id="card-${b.id}" style="box-shadow: var(--card-shadow); border: 1px solid var(--border); border-radius: 1rem; padding: 1.5rem; margin-bottom: 1.5rem; display: flex; flex-direction: column;">
+          <!-- Top: Detail row -->
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; flex-wrap: wrap;">
+            
+            <div style="display: flex; gap: 1rem; align-items: center;">
+              <img src="${b.providerAvatar}" alt="${b.providerName}" class="booking-pro-avatar" style="width: 3.5rem; height: 3.5rem; border-radius: 50%; object-fit: cover;">
+              <div class="booking-details-txt">
+                <h3 style="font-size: 1.15rem; margin: 0; font-weight: 700; color: var(--text-primary);">${b.providerName}</h3>
+                <span class="provider-card-category" style="font-size: 0.8rem; text-transform: capitalize; color: var(--text-secondary);">${this.getCategoryIcon(b.providerCategory)} ${b.providerCategory}</span>
+                <div class="booking-meta-row" style="font-size: 0.8rem; color: var(--text-muted); display: flex; gap: 0.75rem; margin-top: 0.25rem;">
+                  <span><i data-lucide="calendar" style="width:0.8rem; height:0.8rem; display:inline;"></i> ${b.date}</span>
+                  <span><i data-lucide="clock" style="width:0.8rem; height:0.8rem; display:inline;"></i> ${b.time}</span>
+                </div>
               </div>
             </div>
-          </div>
-          
-          <div class="booking-item-right">
-            <span class="badge ${badgeClass}">${b.status}</span>
-            <div class="text-right">
-              <span class="booking-price-tag">$${b.totalPrice.toFixed(2)}</span>
-              <div class="booking-actions-row">
-                <button class="btn btn-secondary btn-small" onclick="app.openChatFromBooking('${b.id}')"><i data-lucide="message-square"></i> Chat</button>
-                ${b.status === 'pending' ? `
-                  <button class="btn btn-secondary btn-small text-red" onclick="app.cancelBooking('${b.id}')" style="color: var(--danger); border-color: var(--danger-light);">Cancel</button>
-                ` : ''}
-                ${b.status === 'completed' ? (
-                  b.isReviewed ? `
-                    <span class="badge" style="background-color: var(--primary-light); color: var(--primary); text-transform: none; font-size: 0.8rem; padding: 0.4rem 0.65rem; border-radius: 0.35rem; display: inline-flex; align-items: center; gap: 0.25rem;"><i data-lucide="star" style="width:0.85rem; height:0.85rem; fill:var(--primary); display:inline;"></i> Rated</span>
-                  ` : `
-                    <button class="btn btn-primary btn-small" onclick="app.openReviewModal('${b.id}')"><i data-lucide="star"></i> Rate Professional</button>
-                  `
-                ) : ''}
-              </div>
+
+            <div class="text-right" style="display: flex; flex-direction: column; align-items: flex-end; gap: 0.35rem;">
+              <span class="badge ${badgeClass}" style="padding: 0.25rem 0.65rem; font-size: 0.75rem; border-radius: 0.35rem;">${b.status}</span>
+              <span class="booking-price-tag" style="font-size: 1.25rem; font-weight: 800; color: var(--text-primary);">$${b.totalPrice.toFixed(2)}</span>
             </div>
+
           </div>
+
+          <!-- Description / Work address detail -->
+          <div style="background: var(--bg-primary); border: 1px solid var(--border); border-radius: 0.5rem; padding: 0.75rem; font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.75rem;">
+            <strong>Job Location address:</strong> ${b.clientAddress}<br>
+            <strong>Problem Description:</strong> "${b.clientDescription}"
+          </div>
+
+          <!-- Middle: Workflow Status Panels -->
+          ${workflowHTML}
+
+          <!-- Bottom: Standard Chat / cancel actions -->
+          <div style="display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1rem; border-top: 1px solid var(--border); padding-top: 0.75rem;">
+            <button class="btn btn-secondary btn-small" onclick="app.openChatFromBooking('${b.id}')"><i data-lucide="message-square"></i> Live Chat</button>
+            ${b.status === 'pending' && this.state.currentUserRole === 'client' ? `
+              <button class="btn btn-secondary btn-small text-red" onclick="app.cancelBooking('${b.id}')" style="color: var(--danger); border-color: var(--danger-light);">Cancel Request</button>
+            ` : ''}
+            ${b.status === 'completed' ? (
+              b.isReviewed ? `
+                <span class="badge" style="background-color: var(--primary-light); color: var(--primary); text-transform: none; font-size: 0.8rem; padding: 0.4rem 0.65rem; border-radius: 0.35rem; display: inline-flex; align-items: center; gap: 0.25rem;"><i data-lucide="star" style="width:0.85rem; height:0.85rem; fill:var(--primary); display:inline;"></i> Rated</span>
+              ` : this.state.currentUserRole === 'client' ? `
+                <button class="btn btn-primary btn-small" onclick="app.openReviewModal('${b.id}')"><i data-lucide="star"></i> Rate Professional</button>
+              ` : ''
+            ) : ''}
+          </div>
+
         </div>
       `;
     }).join('');
@@ -1340,12 +1791,15 @@ class ServifyApp {
     
     if (!requestsContainer) return;
 
-    const alexMercer = this.state.providers.find(p => p.id === 'p1');
-    if (alexMercer) {
+    // Load matching contractor profile from state
+    const currentProId = this.state.currentUserId;
+    const currentPro = this.state.providers.find(p => p.id === currentProId);
+    
+    if (currentPro) {
       // Update portal header name dynamically
       const titleName = document.getElementById('provider-dashboard-title-name');
       if (titleName) {
-        titleName.textContent = alexMercer.name || 'Alex Mercer';
+        titleName.textContent = currentPro.name;
       }
 
       // Pre-populate update profile form inputs
@@ -1354,122 +1808,170 @@ class ServifyApp {
       const taglineInput = document.getElementById('edit-pro-tagline');
       const bioInput = document.getElementById('edit-pro-bio');
 
-      if (nameInput && document.activeElement !== nameInput) nameInput.value = alexMercer.name || '';
-      if (phoneInput && document.activeElement !== phoneInput) phoneInput.value = alexMercer.phone || '';
-      if (taglineInput && document.activeElement !== taglineInput) taglineInput.value = alexMercer.tagline || '';
-      if (bioInput && document.activeElement !== bioInput) bioInput.value = alexMercer.bio || '';
+      if (nameInput && document.activeElement !== nameInput) nameInput.value = currentPro.name || '';
+      if (phoneInput && document.activeElement !== phoneInput) phoneInput.value = currentPro.phone || '';
+      if (taglineInput && document.activeElement !== taglineInput) taglineInput.value = currentPro.tagline || '';
+      if (bioInput && document.activeElement !== bioInput) bioInput.value = currentPro.bio || '';
     }
 
-    // Filter requests matching the default logged-in provider (Alex Mercer, id: 'p1')
-    const alexBookings = this.state.bookings.filter(b => b.providerId === 'p1');
-    const pendingRequests = alexBookings.filter(b => b.status === 'pending');
-    const acceptedJobs = alexBookings.filter(b => b.status === 'accepted');
-    const completedJobs = alexBookings.filter(b => b.status === 'completed');
+    // Filter bookings assigned to active contractor ID
+    const assignedBookings = this.state.bookings.filter(b => b.providerId === currentProId);
+    
+    const pendingRequests = assignedBookings.filter(b => b.status === 'pending');
+    const activeJobs = assignedBookings.filter(b => ['acknowledged', 'quoted', 'hired', 'payment_pending'].includes(b.status));
+    const completedJobs = assignedBookings.filter(b => b.status === 'completed');
 
-    // Compute mock earnings
-    let baseGross = 1420.00;
-    let baseCommission = baseGross * 0.15; // 15% Servify cut
-    let baseNet = baseGross * 0.85;        // 85% Take-home
-
-    let grossAdded = 0;
-    let commissionAdded = 0;
-    let netAdded = 0;
+    // Compute earnings
+    let baseGross = 0;
+    let baseCommission = 0;
+    let baseNet = 0;
 
     completedJobs.forEach(j => {
-      const subtotal = j.subtotalPrice || (j.totalPrice - 5.00);
-      const commission = j.platformCommission !== undefined ? j.platformCommission : (subtotal * 0.15);
-      const net = j.workerPayout !== undefined ? j.workerPayout : (subtotal * 0.85);
+      const labor = j.contractorQuote || (j.totalPrice - 5.00);
+      const commission = j.platformCommission !== undefined ? j.platformCommission : (labor * 0.15);
+      const net = j.workerPayout !== undefined ? j.workerPayout : labor;
 
-      grossAdded += subtotal;
-      commissionAdded += commission;
-      netAdded += net;
+      baseGross += labor;
+      baseCommission += commission;
+      baseNet += net;
     });
 
-    const finalGross = baseGross + grossAdded;
-    const finalCommission = baseCommission + commissionAdded;
-    const finalNet = baseNet + netAdded;
+    if (netPayoutValue) netPayoutValue.textContent = `$${baseNet.toFixed(2)}`;
+    if (grossBillingsValue) grossBillingsValue.textContent = `$${baseGross.toFixed(2)}`;
+    if (commissionDeductedValue) commissionDeductedValue.textContent = `$${baseCommission.toFixed(2)}`;
+    if (completedCountValue) completedCountValue.textContent = completedJobs.length;
 
-    if (netPayoutValue) netPayoutValue.textContent = `$${finalNet.toFixed(2)}`;
-    if (grossBillingsValue) grossBillingsValue.textContent = `$${finalGross.toFixed(2)}`;
-    if (commissionDeductedValue) commissionDeductedValue.textContent = `$${finalCommission.toFixed(2)}`;
-    if (completedCountValue) completedCountValue.textContent = 12 + completedJobs.length;
-
-    // 1. Render Pending Requests
+    // 1. Render Pending Requests - Glowing Acknowledgment Alerts (Uber/Rapido style)
     if (pendingRequests.length === 0) {
-      requestsContainer.innerHTML = `<p class="text-muted text-center py-4">No pending job requests.</p>`;
-    } else {
-      requestsContainer.innerHTML = pendingRequests.map(req => {
-        const subtotal = req.subtotalPrice || (req.totalPrice - 5.00);
-        const payout = req.workerPayout !== undefined ? req.workerPayout : (subtotal * 0.85);
-        const fee = req.platformCommission !== undefined ? req.platformCommission : (subtotal * 0.15);
-
-        return `
-          <div class="job-request-item" id="req-${req.id}">
-            <div class="job-req-header" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem;">
-              <span class="job-req-client" style="font-weight: 600;">Client: Abhishek K.</span>
-              <div class="text-right">
-                <span class="job-req-price" id="total-${req.id}" style="font-size: 1.15rem; font-weight: 700; color: var(--primary);">$${req.totalPrice.toFixed(2)}</span>
-                <div class="provider-split-info" style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.15rem;">
-                  Payout: <span id="payout-${req.id}">$${payout.toFixed(2)}</span> (Fee: <span id="fee-${req.id}">$${fee.toFixed(2)}</span>)
-                </div>
-              </div>
-            </div>
-            <div class="job-req-details mb-4">
-              <span><strong>Services:</strong> ${req.servicesSelected.map(s => s.name).join(', ')}</span>
-              <span><strong>Schedule:</strong> ${req.date} at ${req.time}</span>
-              <div style="margin-top: 0.75rem; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
-                <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary);">Confirm/Edit Price ($):</label>
-                <input type="number" id="negotiated-price-${req.id}" class="form-input-small negotiated-price-input" data-id="${req.id}" style="width: 80px; height: 1.8rem; padding: 0.2rem;" value="${subtotal.toFixed(2)}" min="1">
-              </div>
-            </div>
-            <div class="job-req-actions">
-              <button class="btn btn-primary btn-small flex-grow-1" onclick="app.acceptJobRequest('${req.id}')">Accept Job</button>
-              <button class="btn btn-secondary btn-small" onclick="app.declineJobRequest('${req.id}')" style="color: var(--danger)">Decline</button>
-            </div>
-          </div>
-        `;
-      }).join('');
-    }
-
-    // 2. Render Active Schedule
-    const allScheduleJobs = [...acceptedJobs];
-    if (allScheduleJobs.length === 0) {
-      scheduleContainer.innerHTML = `
+      requestsContainer.innerHTML = `
         <div class="text-center py-4 text-muted">
-          <p>No jobs scheduled. Accept incoming requests to populate calendar.</p>
+          <p>No pending job requests.</p>
+          <span style="font-size:0.75rem;">New inspection matches will trigger high-priority alerts here.</span>
         </div>
       `;
     } else {
-      scheduleContainer.innerHTML = allScheduleJobs.map(job => {
-        // Parse date for calendar block representation
-        const dateObj = new Date(job.date);
-        const day = dateObj.getDate() || '28';
-        const month = dateObj.toLocaleString('en-US', { month: 'short' }) || 'May';
-        
-        const subtotal = job.subtotalPrice || (job.totalPrice - 5.00);
-        const payout = job.workerPayout !== undefined ? job.workerPayout : (subtotal * 0.85);
-
+      requestsContainer.innerHTML = pendingRequests.map(req => {
         return `
-          <div class="schedule-item">
-            <div class="schedule-date-box">
-              <span class="day">${day}</span>
-              <span class="mo">${month}</span>
+          <div class="job-request-item" id="req-${req.id}" data-id="${req.id}" style="border: 1px solid var(--border); background: var(--bg-secondary); border-radius: 0.75rem; padding: 1.25rem; margin-bottom: 1rem; box-shadow: var(--card-shadow); animation: fadeIn 0.4s ease;">
+            
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem;">
+              <div>
+                <span style="font-size: 0.75rem; font-weight: 700; color: var(--primary); text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 0.15rem;">New Inspection Request</span>
+                <strong style="font-size: 1.1rem; color: var(--text-primary);">Client: ${req.clientName}</strong>
+              </div>
             </div>
-            <div class="schedule-details">
-              <h4>${job.servicesSelected.map(s => s.name).join(', ')}</h4>
-              <p>Client: Abhishek K. • ${job.time} • <strong style="color: var(--success);">Payout: $${payout.toFixed(2)}</strong></p>
+
+            <div style="background: var(--bg-primary); border: 1px solid var(--border); border-radius: 0.5rem; padding: 0.75rem; font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 1rem;">
+              <strong>Category:</strong> ${req.providerCategory.toUpperCase()}<br>
+              <strong>Description:</strong> "${req.clientDescription}"
             </div>
-            <div>
-              <button class="btn btn-primary btn-small" onclick="app.completeJob('${job.id}')">Complete Job</button>
+
+            <div style="display: flex; gap: 0.5rem;">
+              <button class="btn btn-primary btn-small flex-grow-1" onclick="app.acknowledgeLeadRequest('${req.id}')" style="font-size:0.85rem;"><i data-lucide="check" style="width:0.85rem; height:0.85rem; display:inline;"></i> Accept & Inspect</button>
+              <button class="btn btn-secondary btn-small text-red" onclick="app.declineJobRequest('${req.id}')" style="font-size:0.85rem; color: var(--danger)">Decline</button>
             </div>
+
           </div>
         `;
       }).join('');
     }
 
-    // 3. Render Custom Rates Editor (for provider id 'p1' Alex Mercer)
-    if (alexMercer) {
-      ratesContainer.innerHTML = alexMercer.pricingList.map((srv, index) => `
+    // 2. Render Active Schedule & Project Status Tracker (Quotations + Phase controls)
+    if (activeJobs.length === 0) {
+      scheduleContainer.innerHTML = `
+        <div class="text-center py-4 text-muted">
+          <p>No active jobs or quotations scheduled.</p>
+          <span style="font-size:0.75rem;">Accept lead alerts to populate active projects here.</span>
+        </div>
+      `;
+    } else {
+      scheduleContainer.innerHTML = activeJobs.map(job => {
+        let workflowHTML = '';
+
+        if (job.status === 'acknowledged') {
+          // Contractor must upload detailed quotation
+          workflowHTML = `
+            <div style="background: var(--info-light); border: 1px dashed var(--info); padding: 1rem; border-radius: 0.5rem; margin-top: 1rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem;">
+              <div>
+                <span style="font-size: 0.8rem; font-weight: 700; color: var(--info); text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 0.25rem;">Address Unlocked: ${job.clientAddress}</span>
+                <p style="margin: 0; font-size: 0.82rem; color: var(--text-secondary);">Perform the site inspection and upload a detailed labor quote to the client.</p>
+              </div>
+              <button class="btn btn-primary btn-small" onclick="app.openQuoteModal('${job.id}')" style="background: var(--info); border-color: var(--info); white-space: nowrap;"><i data-lucide="upload-cloud" style="width:0.85rem; height:0.85rem;"></i> Upload Quote</button>
+            </div>
+          `;
+        } else if (job.status === 'quoted') {
+          // Waiting for client hire response
+          workflowHTML = `
+            <div style="background: var(--bg-primary); border: 1px solid var(--border); padding: 1rem; border-radius: 0.5rem; margin-top: 1rem; display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: var(--text-secondary);">
+              <span>📝 <strong>Quotation Uploaded!</strong> Cost: $${job.contractorQuote.toFixed(2)} (${job.workerCount} workers, ${job.estimatedHours} hours). Awaiting client decision (Hire request)...</span>
+            </div>
+          `;
+        } else if (job.status === 'hired') {
+          // Work in Progress - contractor has phase transition options!
+          const activePercentage = job.currentPhase * 25;
+
+          workflowHTML = `
+            <div style="background: var(--primary-light); border: 1px solid var(--primary); padding: 1rem; border-radius: 0.5rem; margin-top: 1rem;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                <span style="font-size: 0.8rem; font-weight: 700; color: var(--primary); text-transform: uppercase; letter-spacing: 0.05em;"><span class="pulse-indicator"></span> Active Progress: Phase ${job.currentPhase}/4</span>
+              </div>
+              
+              <div style="width: 100%; height: 0.4rem; background: var(--border); border-radius: 9999px; overflow: hidden; margin-bottom: 0.75rem;">
+                <div style="height: 100%; width: ${activePercentage}%; background: var(--primary); border-radius: 9999px; transition: width 0.3s ease;"></div>
+              </div>
+
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 0.8rem; color: var(--text-secondary);">Address: <strong>${job.clientAddress}</strong></span>
+                <button class="btn btn-primary btn-small" onclick="app.advanceProjectPhase('${job.id}')" style="font-size: 0.75rem; padding: 0.35rem 0.65rem;">
+                  ${job.currentPhase === 3 ? 'Mark Completed' : 'Transition Phase'} <i data-lucide="chevron-right" style="width:0.8rem; height:0.8rem; display:inline;"></i>
+                </button>
+              </div>
+            </div>
+          `;
+        } else if (job.status === 'payment_pending') {
+          // Waiting for payment
+          workflowHTML = `
+            <div style="background: var(--accent-light); border: 1px dashed var(--accent); padding: 1rem; border-radius: 0.5rem; margin-top: 1rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem;">
+              <div>
+                <span style="font-size: 0.8rem; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: 0.05em; display: block;">🏁 Work Completed Successfully</span>
+                <p style="margin: 0; font-size: 0.82rem; color: var(--text-secondary);">Invoice of $${job.totalPrice.toFixed(2)} sent. Awaiting client direct payment confirmation...</p>
+              </div>
+              <span style="font-size: 0.82rem; font-weight: 700; color: var(--accent);"><i data-lucide="loader" style="width:0.8rem; height:0.8rem; display:inline;"></i> Awaiting Payment</span>
+            </div>
+          `;
+        }
+
+        // Calendar block date calculations
+        const dateObj = new Date(job.date);
+        const day = dateObj.getDate() || '28';
+        const month = dateObj.toLocaleString('en-US', { month: 'short' }) || 'May';
+
+        return `
+          <div class="schedule-item" style="background: var(--bg-secondary); border: 1px solid var(--border); padding: 1.25rem; border-radius: 0.75rem; margin-bottom: 1rem; display: flex; flex-direction: column; gap: 0.5rem; box-shadow: var(--card-shadow);">
+            
+            <div style="display: flex; gap: 1rem; align-items: center;">
+              <div class="schedule-date-box" style="background: var(--primary-light); color: var(--primary); text-align: center; padding: 0.5rem; border-radius: 0.5rem; width: 3.2rem; min-width: 3.2rem; font-family: 'Outfit';">
+                <span class="day" style="display: block; font-size: 1.25rem; font-weight: 800; line-height: 1;">${day}</span>
+                <span class="mo" style="display: block; font-size: 0.75rem; text-transform: uppercase; font-weight: 700; margin-top: 0.15rem;">${month}</span>
+              </div>
+              <div style="flex-grow: 1;">
+                <h4 style="font-size: 1.05rem; margin: 0; font-weight: 700; color: var(--text-primary);">${job.servicesSelected[0].name}</h4>
+                <p style="margin: 0.15rem 0; font-size: 0.85rem; color: var(--text-secondary);">Client: <strong>${job.clientName}</strong> • Schedule: ${job.time}</p>
+              </div>
+              <span class="badge ${job.status === 'completed' ? 'badge-completed' : 'badge-accepted'}" style="font-size:0.7rem; border-radius: 0.25rem; text-transform: uppercase;">${job.status}</span>
+            </div>
+
+            <!-- Workflow status block -->
+            ${workflowHTML}
+
+          </div>
+        `;
+      }).join('');
+    }
+
+    // 3. Render Custom Rates Editor (for contractor index ID)
+    if (currentPro) {
+      ratesContainer.innerHTML = currentPro.pricingList.map((srv, index) => `
         <div class="rate-edit-row">
           <span class="rate-edit-name">${srv.name}</span>
           <div class="rate-edit-input-wrapper">
@@ -1481,55 +1983,35 @@ class ServifyApp {
     }
   }
 
-  async acceptJobRequest(bookingId) {
+  async acknowledgeLeadRequest(bookingId) {
     const booking = this.state.bookings.find(b => b.id === bookingId);
     if (!booking) return;
 
-    // Get the negotiated price value from the input field
-    const priceInput = document.getElementById(`negotiated-price-${bookingId}`);
-    const negotiatedPrice = priceInput ? parseFloat(priceInput.value) : null;
-    
-    // Fallback if not valid number
-    const subtotal = (negotiatedPrice !== null && !isNaN(negotiatedPrice) && negotiatedPrice > 0) 
-      ? negotiatedPrice 
-      : (booking.subtotalPrice || (booking.totalPrice - 5.00));
-
     try {
-      const response = await fetch(`${API_BASE_URL}/bookings/${bookingId}/accept`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ subtotalPrice: subtotal })
+      const response = await fetch(`${API_BASE_URL}/bookings/${bookingId}/acknowledge`, {
+        method: 'POST'
       });
-      if (!response.ok) throw new Error('API accept failed');
+      if (!response.ok) throw new Error('API acknowledge failed');
       const updated = await response.json();
       booking.status = updated.status;
-      booking.subtotalPrice = updated.subtotalPrice;
-      booking.totalPrice = updated.totalPrice;
-      booking.platformCommission = updated.platformCommission;
-      booking.workerPayout = updated.workerPayout;
       booking.chatHistory = updated.chatHistory;
     } catch (err) {
-      console.warn('API error, falling back to local simulation:', err);
-      booking.status = 'accepted';
-      
-      // Update local price in offline simulation
-      booking.subtotalPrice = subtotal;
-      booking.platformCommission = subtotal * 0.15;
-      booking.workerPayout = subtotal * 0.85;
-      booking.totalPrice = subtotal + (booking.serviceFee || 5.00);
-
+      console.warn('API error, falling back to local simulation acknowledge:', err);
+      booking.status = 'acknowledged';
       booking.chatHistory.push({
         sender: 'provider',
-        text: `Great! I've accepted this request for $${booking.totalPrice.toFixed(2)} ($${subtotal.toFixed(2)} price + $5.00 service fee) and added it to my calendar. See you then!`,
+        text: "Lead Acknowledged! I have secured your request and unlocked your address. I will now perform the site inspection to prepare your detailed quotation.",
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       });
     }
 
     this.saveState();
-    this.showToast('Job request accepted!');
+    this.showToast('Lead request acknowledged!');
     this.renderProviderDashboard();
+    this.renderUserBookings();
   }
 
+  // Acknowledgment decline
   async declineJobRequest(bookingId) {
     const booking = this.state.bookings.find(b => b.id === bookingId);
     if (!booking) return;
@@ -1538,44 +2020,288 @@ class ServifyApp {
       const response = await fetch(`${API_BASE_URL}/bookings/${bookingId}/cancel`, {
         method: 'POST'
       });
-      if (!response.ok) throw new Error('API decline failed');
+      if (!response.ok) throw new Error('API cancel failed');
       const updated = await response.json();
       booking.status = updated.status;
     } catch (err) {
-      console.warn('API error, falling back to local simulation:', err);
+      console.warn('API error, falling back to local simulation decline:', err);
       booking.status = 'cancelled';
     }
 
     this.saveState();
-    this.showToast('Job request declined.');
+    this.showToast('Lead request declined.');
     this.renderProviderDashboard();
+    this.renderUserBookings();
   }
 
-  async completeJob(bookingId) {
+  // --- QUOTATION MODAL HANDLING ---
+  openQuoteModal(bookingId) {
+    this.state.activeQuoteBookingId = bookingId;
+    const modal = document.getElementById('contractor-quote-modal');
+    if (modal) {
+      modal.classList.remove('hidden');
+      
+      // Bind submission specifically for this form
+      const form = document.getElementById('quote-submission-form');
+      if (form) {
+        form.onsubmit = (e) => {
+          e.preventDefault();
+          this.submitDetailedQuotation();
+        };
+      }
+    }
+  }
+
+  closeQuoteModal() {
+    const modal = document.getElementById('contractor-quote-modal');
+    if (modal) modal.classList.add('hidden');
+    this.state.activeQuoteBookingId = null;
+  }
+
+  async submitDetailedQuotation() {
+    const bookingId = this.state.activeQuoteBookingId;
+    if (!bookingId) return;
+
     const booking = this.state.bookings.find(b => b.id === bookingId);
     if (!booking) return;
 
+    const quoteVal = parseFloat(document.getElementById('quote-labor-cost').value);
+    const workerCount = parseInt(document.getElementById('quote-worker-count').value);
+    const estHours = parseInt(document.getElementById('quote-est-hours').value);
+    const details = document.getElementById('quote-details').value.trim();
+
+    if (isNaN(quoteVal) || quoteVal <= 0 || isNaN(workerCount) || isNaN(estHours) || !details) {
+      this.showToast('Please enter valid quotation details.');
+      return;
+    }
+
+    const markup = 0;
+    const total = quoteVal;
+
     try {
-      const response = await fetch(`${API_BASE_URL}/bookings/${bookingId}/complete`, {
-        method: 'POST'
+      const response = await fetch(`${API_BASE_URL}/bookings/${bookingId}/quote`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contractorQuote: quoteVal,
+          workerCount,
+          estimatedHours: estHours,
+          quoteDetails: details
+        })
       });
-      if (!response.ok) throw new Error('API complete failed');
+
+      if (!response.ok) throw new Error('API quotation upload failed');
       const updated = await response.json();
       booking.status = updated.status;
+      booking.contractorQuote = updated.contractorQuote;
+      booking.subtotalPrice = updated.subtotalPrice;
+      booking.platformMarkup = updated.platformMarkup;
+      booking.platformCommission = updated.platformCommission;
+      booking.workerPayout = updated.workerPayout;
+      booking.workerCount = updated.workerCount;
+      booking.estimatedHours = updated.estimatedHours;
+      booking.totalPrice = updated.totalPrice;
+      booking.servicesSelected = updated.servicesSelected;
       booking.chatHistory = updated.chatHistory;
     } catch (err) {
-      console.warn('API error, falling back to local simulation:', err);
-      booking.status = 'completed';
+      console.warn('API error, falling back to local simulation quote upload:', err);
+      booking.status = 'quoted';
+      booking.contractorQuote = quoteVal;
+      booking.subtotalPrice = quoteVal;
+      booking.platformMarkup = 0;
+      booking.platformCommission = 0;
+      booking.workerPayout = quoteVal;
+      booking.workerCount = workerCount;
+      booking.estimatedHours = estHours;
+      booking.totalPrice = total;
+      booking.servicesSelected = [{ name: details, price: quoteVal }];
       booking.chatHistory.push({
         sender: 'provider',
-        text: "The job has been completed. Thank you for choosing Servify!",
+        text: `Quotation uploaded: $${quoteVal.toFixed(2)} Total. Estimated completion time is ${estHours} hours using ${workerCount} employees. Please click Hire to initiate work!`,
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       });
     }
 
     this.saveState();
-    this.showToast('Job completed successfully!');
+    this.closeQuoteModal();
+    this.showToast('Quotation uploaded and sent to client!');
     this.renderProviderDashboard();
+    this.renderUserBookings();
+
+    // Reset inputs
+    document.getElementById('quote-labor-cost').value = '';
+    document.getElementById('quote-worker-count').value = '1';
+    document.getElementById('quote-est-hours').value = '';
+    document.getElementById('quote-details').value = '';
+  }
+
+  // --- CLIENT HIRE DECISION ---
+  async hireContractor(bookingId) {
+    const booking = this.state.bookings.find(b => b.id === bookingId);
+    if (!booking) return;
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/bookings/${bookingId}/hire`, {
+        method: 'POST'
+      });
+      if (!response.ok) throw new Error('API hire failed');
+      const updated = await response.json();
+      booking.status = updated.status;
+      booking.currentPhase = updated.currentPhase;
+      booking.phaseTimestamps = updated.phaseTimestamps;
+      booking.chatHistory = updated.chatHistory;
+    } catch (err) {
+      console.warn('API error, falling back to local simulation hiring:', err);
+      booking.status = 'hired';
+      booking.currentPhase = 1;
+      booking.phaseTimestamps = {
+        phase1_start: Date.now()
+      };
+      booking.chatHistory.push({
+        sender: 'system',
+        text: "Project officially HIRED and LAUNCHED! Progress phase set to Phase 1: Work Initiated.",
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      });
+    }
+
+    this.saveState();
+    this.showToast('Contractor hired! Work has started.');
+    this.renderUserBookings();
+    this.renderProviderDashboard();
+  }
+
+  // --- PROGRESS PHASE ADVANCEMENT ---
+  async advanceProjectPhase(bookingId) {
+    const booking = this.state.bookings.find(b => b.id === bookingId);
+    if (!booking) return;
+
+    const nextPhase = (booking.currentPhase || 1) + 1;
+    if (nextPhase > 4) return;
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/bookings/${bookingId}/progress`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phase: nextPhase })
+      });
+      if (!response.ok) throw new Error('API progress update failed');
+      const updated = await response.json();
+      booking.status = updated.status;
+      booking.currentPhase = updated.currentPhase;
+      booking.phaseTimestamps = updated.phaseTimestamps;
+      booking.chatHistory = updated.chatHistory;
+    } catch (err) {
+      console.warn('API error, falling back to local simulation progress transition:', err);
+      booking.currentPhase = nextPhase;
+      booking.phaseTimestamps = booking.phaseTimestamps || {};
+      booking.phaseTimestamps[`phase${nextPhase}_start`] = Date.now();
+
+      let textMsg = "";
+      if (nextPhase === 2) textMsg = "Progress Update: Initial Phase (Phase 2) initiated.";
+      else if (nextPhase === 3) textMsg = "Progress Update: Middle Phase (Phase 3) initiated.";
+      else if (nextPhase === 4) {
+        booking.status = 'payment_pending';
+        booking.phaseTimestamps.phase4_end = Date.now();
+        textMsg = "Progress Update: Job Finished! Awaiting client checkout payment.";
+      }
+
+      booking.chatHistory.push({
+        sender: 'system',
+        text: textMsg,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      });
+    }
+
+    this.saveState();
+    this.showToast(`Job transitioned to Phase ${nextPhase}`);
+    this.renderProviderDashboard();
+    this.renderUserBookings();
+  }
+
+  // --- PAYMENT MODAL & GATEWAY ---
+  openPaymentModal(bookingId) {
+    this.state.activePaymentBookingId = bookingId;
+    const booking = this.state.bookings.find(b => b.id === bookingId);
+    if (!booking) return;
+
+    const modal = document.getElementById('client-payment-modal');
+    if (!modal) return;
+
+    const total = booking.totalPrice || booking.contractorQuote || 0;
+
+    // Populate billing costs
+    document.getElementById('pay-total-cost').textContent = total.toFixed(2);
+
+    modal.classList.remove('hidden');
+
+    // Bind payment form submit
+    const form = document.getElementById('payment-checkout-form');
+    if (form) {
+      form.onsubmit = (e) => {
+        e.preventDefault();
+        this.processCheckoutPayment();
+      };
+    }
+  }
+
+  closePaymentModal() {
+    const modal = document.getElementById('client-payment-modal');
+    if (modal) modal.classList.add('hidden');
+    this.state.activePaymentBookingId = null;
+  }
+
+  togglePayModeInputs(mode) {
+    // Left empty since complex card forms were simplified
+  }
+
+  async processCheckoutPayment() {
+    const bookingId = this.state.activePaymentBookingId;
+    if (!bookingId) return;
+
+    const booking = this.state.bookings.find(b => b.id === bookingId);
+    if (!booking) return;
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/bookings/${bookingId}/pay`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          paymentMode: 'direct'
+        })
+      });
+
+      if (!response.ok) throw new Error('API payment failed');
+      const updated = await response.json();
+      booking.status = updated.status;
+      booking.paymentCompleted = updated.paymentCompleted;
+      booking.paymentMode = updated.paymentMode;
+      booking.chatHistory = updated.chatHistory;
+    } catch (err) {
+      console.warn('API error, falling back to local simulation payment:', err);
+      booking.status = 'completed';
+      booking.paymentCompleted = true;
+      booking.paymentMode = 'direct';
+
+      booking.chatHistory.push({
+        sender: 'system',
+        text: `Direct payment of $${booking.totalPrice.toFixed(2)} completed successfully!`,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      });
+      booking.chatHistory.push({
+        sender: 'provider',
+        text: "Thank you for the payment and choosing Servify! The contract has been completed. Please rate my services!",
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      });
+    }
+
+    this.saveState();
+    this.closePaymentModal();
+    this.showToast('Payment confirmed successfully!');
+    this.renderUserBookings();
+    this.renderProviderDashboard();
+    
+    // Auto-prompt rating scorecard reviews instantly
+    this.openReviewModal(bookingId);
   }
 
   bindProviderDashboardEvents() {
@@ -1593,9 +2319,9 @@ class ServifyApp {
           const totalSpan = document.getElementById(`total-${bookingId}`);
           
           if (payoutSpan && feeSpan && totalSpan) {
-            const payout = val * 0.85;
+            const payout = val;
             const fee = val * 0.15;
-            const total = val + 5.00;
+            const total = val + fee + 5.00;
             
             payoutSpan.textContent = `$${payout.toFixed(2)}`;
             feeSpan.textContent = `$${fee.toFixed(2)}`;
@@ -1612,17 +2338,17 @@ class ServifyApp {
         const index = parseInt(e.target.getAttribute('data-index'));
         const newPrice = parseFloat(e.target.value) || 0;
         
-        const alex = this.state.providers.find(p => p.id === 'p1');
-        if (alex && alex.pricingList[index]) {
-          alex.pricingList[index].price = newPrice;
+        const activePro = this.state.providers.find(p => p.id === this.state.currentUserId);
+        if (activePro && activePro.pricingList[index]) {
+          activePro.pricingList[index].price = newPrice;
           this.saveState();
 
           // Sync with server
           try {
-            await fetch(`${API_BASE_URL}/providers/p1/rates`, {
+            await fetch(`${API_BASE_URL}/providers/${this.state.currentUserId}/rates`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ pricingList: alex.pricingList })
+              body: JSON.stringify({ pricingList: activePro.pricingList })
             });
           } catch (err) {
             console.warn('Failed to sync rates with server:', err);
@@ -1648,16 +2374,16 @@ class ServifyApp {
         }
 
         // 1. Update local state
-        const alex = this.state.providers.find(p => p.id === 'p1');
-        if (alex) {
-          alex.name = nameVal;
-          alex.phone = phoneVal;
-          alex.tagline = taglineVal;
-          alex.bio = bioVal;
+        const activePro = this.state.providers.find(p => p.id === this.state.currentUserId);
+        if (activePro) {
+          activePro.name = nameVal;
+          activePro.phone = phoneVal;
+          activePro.tagline = taglineVal;
+          activePro.bio = bioVal;
 
           // Sync with customer bookings locally
           this.state.bookings.forEach(b => {
-            if (b.providerId === 'p1') {
+            if (b.providerId === this.state.currentUserId) {
               b.providerName = nameVal;
             }
           });
@@ -1667,7 +2393,7 @@ class ServifyApp {
 
         // 2. Sync changes back to server database
         try {
-          const response = await fetch(`${API_BASE_URL}/providers/p1/profile`, {
+          const response = await fetch(`${API_BASE_URL}/providers/${this.state.currentUserId}/profile`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -1687,7 +2413,7 @@ class ServifyApp {
           if (resData.success && resData.provider) {
             // Update local memory state with details returned from backend
             const updatedPro = resData.provider;
-            const idx = this.state.providers.findIndex(p => p.id === 'p1');
+            const idx = this.state.providers.findIndex(p => p.id === this.state.currentUserId);
             if (idx !== -1) {
               this.state.providers[idx] = updatedPro;
             }

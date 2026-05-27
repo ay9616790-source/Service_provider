@@ -1,6 +1,39 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="light">
 <head>
+  <script>
+    window.onerror = function(message, source, lineno, colno, error) {
+      const errorDetails = {
+        message: message,
+        source: source,
+        lineno: lineno,
+        colno: colno,
+        stack: error ? error.stack : ''
+      };
+      console.error("Global Error Caught:", errorDetails);
+      fetch('http://localhost:5000/api/log-error', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(errorDetails)
+      }).catch(e => {});
+      return false;
+    };
+    window.addEventListener('unhandledrejection', function(event) {
+      const errorDetails = {
+        message: 'Unhandled Promise Rejection: ' + event.reason,
+        source: '',
+        lineno: 0,
+        colno: 0,
+        stack: event.reason && event.reason.stack ? event.reason.stack : String(event.reason)
+      };
+      console.error("Unhandled Promise Rejection Caught:", errorDetails);
+      fetch('http://localhost:5000/api/log-error', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(errorDetails)
+      }).catch(e => {});
+    });
+  </script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Servify - Trusted Local Home Service Providers</title>
@@ -27,15 +60,15 @@
         <span class="logo-text">Servify</span>
       </a>
       
-      <nav class="main-nav">
-        <a href="#" class="nav-link active" data-target="landing-view">Home</a>
-        <a href="#" class="nav-link" data-target="explore-view">Explore Pros</a>
+      <nav class="main-nav" id="main-nav-bar">
+        <!-- Dynamically rendered based on active role -->
+        <a href="#" class="nav-link active" data-target="landing-view" id="nav-link-home">Home</a>
+        <a href="#" class="nav-link" data-target="explore-view" id="nav-link-explore">Explore Pros</a>
         <a href="#" class="nav-link" data-target="user-dashboard-view" id="nav-bookings">My Bookings</a>
-        <a href="#" class="nav-link" data-target="provider-dashboard-view" id="nav-provider-portal">Provider Portal</a>
       </nav>
 
       <!-- Society Selector -->
-      <div class="society-selector-wrapper hidden">
+      <div class="society-selector-wrapper" id="header-society-wrapper">
         <i data-lucide="map-pin" class="pin-icon"></i>
         <select id="header-society-select" class="society-select-dropdown">
           <option value="all">All Societies</option>
@@ -49,10 +82,17 @@
           <i data-lucide="sun" class="sun-icon"></i>
           <i data-lucide="moon" class="moon-icon"></i>
         </button>
-        <!-- Quick Profile -->
-        <div class="user-profile-badge">
-          <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&h=80&fit=crop&q=80" alt="User Avatar" class="small-avatar">
-          <span class="profile-name">Abhishek K.</span>
+        
+        <!-- Role Switching Quick Trigger -->
+        <button id="role-switcher-btn" class="btn btn-secondary btn-small" style="font-size: 0.8rem; padding: 0.4rem 0.85rem; display: flex; align-items: center; gap: 0.25rem;">
+          <i data-lucide="users" style="width: 0.85rem; height: 0.85rem;"></i>
+          <span>Switch User</span>
+        </button>
+
+        <!-- Quick Profile Card -->
+        <div class="user-profile-badge" id="header-profile-badge">
+          <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&h=80&fit=crop&q=80" alt="User Avatar" class="small-avatar" id="header-avatar-img">
+          <span class="profile-name" id="header-profile-name">Abhishek K.</span>
         </div>
       </div>
     </div>
@@ -665,6 +705,175 @@
         </div>
         
         <button class="btn btn-primary btn-full mt-4" id="submit-review-btn">Submit Rating</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 1. Beautiful User Selection / Auth Modal -->
+  <div id="auth-modal" class="modal hidden" style="background: rgba(11, 15, 25, 0.7); backdrop-filter: blur(16px);">
+    <div class="modal-content" style="max-width: 700px; padding: 2.5rem; border-radius: 1.5rem;">
+      <div class="text-center" style="margin-bottom: 2rem;">
+        <span class="logo-icon" style="font-size: 2.5rem;">⚡</span>
+        <h2 style="font-size: 2rem; margin-top: 0.5rem; background: linear-gradient(135deg, var(--primary) 0%, #a855f7 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Welcome to Servify</h2>
+        <p class="text-muted mt-2">Select a mock profile below to login instantly as Client or Contractor</p>
+      </div>
+
+      <div class="auth-columns" style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+        
+        <!-- Left: Clients Column -->
+        <div class="auth-col-card" style="background: var(--bg-offset); padding: 1.5rem; border-radius: 1rem; border: 1px solid var(--border);">
+          <h3 style="margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.5rem; font-size: 1.15rem; color: var(--primary);">
+            <i data-lucide="user"></i> Login as Client
+          </h3>
+          <div class="mock-profiles-list" style="display: flex; flex-direction: column; gap: 0.75rem;">
+            <div class="profile-card-select" onclick="app.loginAs('client', 'c1', 'Abhishek K.', 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&q=80')">
+              <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&q=80" alt="Avatar">
+              <div>
+                <strong>Abhishek K.</strong>
+                <span>Premium Society Resident</span>
+              </div>
+            </div>
+            <div class="profile-card-select" onclick="app.loginAs('client', 'c2', 'Priya Sharma', 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop&q=80')">
+              <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop&q=80" alt="Avatar">
+              <div>
+                <strong>Priya Sharma</strong>
+                <span>Green Valley Heights</span>
+              </div>
+            </div>
+            <div class="profile-card-select" onclick="app.loginAs('client', 'c3', 'Vikram Malhotra', 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop&q=80')">
+              <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop&q=80" alt="Avatar">
+              <div>
+                <strong>Vikram Malhotra</strong>
+                <span>Royal Palms Resident</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Contractors Column -->
+        <div class="auth-col-card" style="background: var(--bg-offset); padding: 1.5rem; border-radius: 1rem; border: 1px solid var(--border);">
+          <h3 style="margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.5rem; font-size: 1.15rem; color: var(--success);">
+            <i data-lucide="briefcase"></i> Join as Partner Pro
+          </h3>
+          <div class="mock-profiles-list" style="display: flex; flex-direction: column; gap: 0.75rem; max-height: 250px; overflow-y: auto; padding-right: 0.25rem;">
+            <div class="profile-card-select" onclick="app.loginAs('contractor', 'p1', 'Alex Mercer', 'https://images.unsplash.com/photo-1540569014015-19a7be504e3a?w=100&h=100&fit=crop&q=80')">
+              <img src="https://images.unsplash.com/photo-1540569014015-19a7be504e3a?w=100&h=100&fit=crop&q=80" alt="Avatar">
+              <div>
+                <strong>Alex Mercer</strong>
+                <span>⚡ Electrician Pro</span>
+              </div>
+            </div>
+            <div class="profile-card-select" onclick="app.loginAs('contractor', 'p2', 'Sarah Jenkins', 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=100&h=100&fit=crop&q=80')">
+              <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=100&h=100&fit=crop&q=80" alt="Avatar">
+              <div>
+                <strong>Sarah Jenkins</strong>
+                <span>🎨 Master Painter</span>
+              </div>
+            </div>
+            <div class="profile-card-select" onclick="app.loginAs('contractor', 'p3', 'Marcus Brody', 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop&q=80')">
+              <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop&q=80" alt="Avatar">
+              <div>
+                <strong>Marcus Brody</strong>
+                <span>🪚 Custom Carpentry</span>
+              </div>
+            </div>
+            <div class="profile-card-select" onclick="app.loginAs('contractor', 'p4', 'Linus Oberg', 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=100&h=100&fit=crop&q=80')">
+              <img src="https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=100&h=100&fit=crop&q=80" alt="Avatar">
+              <div>
+                <strong>Linus Oberg</strong>
+                <span>🖼️ Wallpaper Decor</span>
+              </div>
+            </div>
+            <div class="profile-card-select" onclick="app.loginAs('contractor', 'p5', 'David Miller', 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=100&h=100&fit=crop&q=80')">
+              <img src="https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=100&h=100&fit=crop&q=80" alt="Avatar">
+              <div>
+                <strong>David Miller</strong>
+                <span>🚰 Sanitary Plumber</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. Gated Society Category Contractor List Modal -->
+  <div id="category-contractors-modal" class="modal hidden">
+    <div class="modal-content" style="max-width: 800px; padding: 2rem;">
+      <div class="modal-header">
+        <div>
+          <h3 id="category-modal-title" style="font-size: 1.5rem;">Available Electricians</h3>
+          <p class="text-muted" style="font-size: 0.85rem; margin-top: 0.15rem;">Vetted & neighbor-approved experts active in your area</p>
+        </div>
+        <button class="modal-close" onclick="app.closeCategoryModal()">&times;</button>
+      </div>
+      <div class="modal-body" style="padding-top: 1rem; max-height: 550px; overflow-y: auto;">
+        
+        <!-- Contractors List Container -->
+        <div id="category-modal-pros-list" style="display: flex; flex-direction: column; gap: 1.5rem;">
+          <!-- Dynamically populated from script -->
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. Contractor Upload Quotation Modal -->
+  <div id="contractor-quote-modal" class="modal hidden">
+    <div class="modal-content" style="max-width: 500px;">
+      <div class="modal-header">
+        <h3>Upload Project Quotation</h3>
+        <button class="modal-close" onclick="app.closeQuoteModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-subtitle">Submit estimated labor cost, team size, and timeline limits. Servify automatically applies the 15% platform markup split.</p>
+        
+        <form id="quote-submission-form" class="mt-4">
+          <div class="form-group mb-4">
+            <label for="quote-labor-cost" class="input-label-small" style="font-size: 0.85rem; font-weight: 600; display: block; margin-bottom: 0.25rem;">Estimated Labor Cost ($)</label>
+            <input type="number" id="quote-labor-cost" class="form-input-small" style="width: 100%;" placeholder="e.g. 250" required min="1">
+          </div>
+          <div class="form-group mb-4">
+            <label for="quote-worker-count" class="input-label-small" style="font-size: 0.85rem; font-weight: 600; display: block; margin-bottom: 0.25rem;">Allocated Employees Count</label>
+            <input type="number" id="quote-worker-count" class="form-input-small" style="width: 100%;" placeholder="e.g. 2" required min="1" value="1">
+          </div>
+          <div class="form-group mb-4">
+            <label for="quote-est-hours" class="input-label-small" style="font-size: 0.85rem; font-weight: 600; display: block; margin-bottom: 0.25rem;">Total Estimated Project Time (Hours)</label>
+            <input type="number" id="quote-est-hours" class="form-input-small" style="width: 100%;" placeholder="e.g. 4" required min="1">
+            <span class="call-hint-text mt-1" style="font-size: 0.75rem;">Timers will run in minutes (e.g. 4 hours = 4 minutes) for interactive testing!</span>
+          </div>
+          <div class="form-group mb-4">
+            <label for="quote-details" class="input-label-small" style="font-size: 0.85rem; font-weight: 600; display: block; margin-bottom: 0.25rem;">Scope & Materials Details</label>
+            <textarea id="quote-details" class="form-input-small" style="width: 100%; height: 4rem; resize: vertical;" placeholder="Include details like wire replacements, switch replacements..." required></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary btn-full mt-2">Upload & Deliver Quotation</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. Client Payment Gateway & Checkout Modal -->
+  <div id="client-payment-modal" class="modal hidden">
+    <div class="modal-content" style="max-width: 550px; padding: 2rem;">
+      <div class="modal-header">
+        <h3>Secure Checkout & Payout</h3>
+        <button class="modal-close" onclick="app.closePaymentModal()">&times;</button>
+      </div>
+      <div class="modal-body" style="padding-top: 1rem;">
+        <div style="background: var(--bg-offset); padding: 1.5rem; border-radius: 0.75rem; margin-bottom: 1.5rem; border: 1px solid var(--border); text-align: center;">
+          <h4 style="font-size: 0.9rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-secondary);">Direct Work Quotation</h4>
+          <div style="font-size: 2rem; font-weight: 800; color: var(--primary); margin: 0.5rem 0;">
+            $<span id="pay-total-cost">0.00</span>
+          </div>
+          <p style="font-size: 0.8rem; color: var(--text-secondary); margin: 0;">This amount is paid directly to the contractor for labor and materials.</p>
+        </div>
+
+        <form id="payment-checkout-form">
+          <p style="font-size: 0.85rem; color: var(--text-primary); margin-bottom: 1.25rem; text-align: center;">Please confirm that you have inspected the completed work and settled the payment directly with the contractor.</p>
+          <button type="submit" class="btn btn-primary btn-full" style="font-size: 1rem; padding: 0.75rem;">Confirm & Complete Booking</button>
+        </form>
+
       </div>
     </div>
   </div>

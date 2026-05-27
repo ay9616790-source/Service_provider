@@ -367,7 +367,7 @@
       "platformCommission": 4.35,
       "workerPayout": 24.65,
       "totalPrice": 34,
-      "status": "pending",
+      "status": "cancelled",
       "chatHistory": [
         {
           "sender": "provider",
