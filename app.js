@@ -16,8 +16,23 @@ class ServifyApp {
       selectedProviderId: null,
       activeChatBookingId: null,
       theme: 'light',
-      selectedSociety: 'all',
-      currentUser: null
+      currentUser: null,
+      get currentUserId() {
+        if (!this.currentUser) return 'c1';
+        return this.currentUser.role === 'provider' ? (this.currentUser.providerId || 'p1') : (this.currentUser.id || 'c1');
+      },
+      get currentUserRole() {
+        if (!this.currentUser) return 'client';
+        return this.currentUser.role === 'customer' ? 'client' : 'contractor';
+      },
+      get currentUserName() {
+        if (!this.currentUser) return 'Abhishek K.';
+        return this.currentUser.name;
+      },
+      get currentUserAvatar() {
+        if (!this.currentUser) return 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&h=80&fit=crop&q=80';
+        return this.currentUser.avatar;
+      }
     };
   }
 
@@ -34,7 +49,6 @@ class ServifyApp {
     this.bindChatEvents();
     this.bindProviderDashboardEvents();
     this.bindReviewEvents();
-    this.initTheme();
     this.bindAuthEvents();
 
     // 4. Perform Initial Renders
@@ -88,6 +102,10 @@ class ServifyApp {
         const parsed = JSON.parse(savedState);
         this.state.theme = parsed.theme || 'light';
         this.state.selectedSociety = parsed.selectedSociety || 'all';
+        this.state.currentUserRole = parsed.currentUserRole || 'client';
+        this.state.currentUserId = parsed.currentUserId || 'c1';
+        this.state.currentUserName = parsed.currentUserName || 'Abhishek K.';
+        this.state.currentUserAvatar = parsed.currentUserAvatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&h=80&fit=crop&q=80';
       } catch (e) {
         console.error('Error loading settings from local storage:', e);
       }
@@ -147,8 +165,95 @@ class ServifyApp {
       providers: this.state.providers,
       bookings: this.state.bookings,
       theme: this.state.theme,
-      selectedSociety: this.state.selectedSociety
+      selectedSociety: this.state.selectedSociety,
+      currentUserRole: this.state.currentUserRole,
+      currentUserId: this.state.currentUserId,
+      currentUserName: this.state.currentUserName,
+      currentUserAvatar: this.state.currentUserAvatar
     }));
+  }
+
+  // --- USER ROLES & SESSION HANDLERS ---
+  initUserRoles() {
+    const switcherBtn = document.getElementById('role-switcher-btn');
+    const authModal = document.getElementById('auth-modal');
+
+    // Show auth modal on click switcher
+    if (switcherBtn && authModal) {
+      switcherBtn.addEventListener('click', () => {
+        authModal.classList.remove('hidden');
+      });
+    }
+
+    this.applyUserRoleSession();
+  }
+
+  applyUserRoleSession() {
+    const profileName = document.getElementById('header-profile-name');
+    const avatarImg = document.getElementById('header-avatar-img');
+    const navBar = document.getElementById('main-nav-bar');
+    const societyWrapper = document.getElementById('header-society-wrapper');
+
+    if (profileName) profileName.textContent = this.state.currentUserName;
+    if (avatarImg) avatarImg.src = this.state.currentUserAvatar;
+
+    if (!navBar) return;
+
+    if (this.state.currentUserRole === 'client') {
+      // Show client links
+      navBar.innerHTML = `
+        <a href="#" class="nav-link" data-target="landing-view" id="nav-link-home">Home</a>
+        <a href="#" class="nav-link" data-target="explore-view" id="nav-link-explore">Explore Pros</a>
+        <a href="#" class="nav-link" data-target="user-dashboard-view" id="nav-bookings">My Bookings</a>
+      `;
+      if (societyWrapper) societyWrapper.classList.remove('hidden');
+    } else {
+      // Show contractor links
+      navBar.innerHTML = `
+        <a href="#" class="nav-link active" data-target="provider-dashboard-view" id="nav-provider-portal">Provider Dashboard</a>
+        <a href="#" class="nav-link" data-target="user-dashboard-view" id="nav-bookings">Message Center</a>
+      `;
+      if (societyWrapper) societyWrapper.classList.add('hidden');
+    }
+
+    // Re-bind click event listeners to new nav links
+    this.initNavigation();
+  }
+
+  loginAs(role, id, name, avatar) {
+    this.state.currentUserRole = role;
+    this.state.currentUserId = id;
+    this.state.currentUserName = name;
+    this.state.currentUserAvatar = avatar;
+
+    const authModal = document.getElementById('auth-modal');
+    if (authModal) authModal.classList.add('hidden');
+
+    this.saveState();
+    this.applyUserRoleSession();
+    this.showToast(`Logged in successfully as ${name} (${role})`);
+
+    // Redirect to the appropriate portal
+    if (role === 'client') {
+      this.navigate('landing-view');
+    } else {
+      this.navigate('provider-dashboard-view');
+    }
+
+    // Force refresh displays
+    this.renderUserBookings();
+    this.renderProviderDashboard();
+    this.renderFeaturedProviders();
+    this.updateExploreResults();
+  }
+
+  // --- BACKGROUND TICKING LOOPS ---
+  startBackgroundLoops() {
+    // Ticking timers cleared to support a direct contractor workflow!
+  }
+
+  updateVisualCountdowns() {
+    // Countdowns cleared to support a direct contractor workflow!
   }
 
   // --- THEME ---
@@ -170,7 +275,20 @@ class ServifyApp {
     const sidebarSelect = document.getElementById('filter-society');
     if (!headerSelect || !sidebarSelect) return;
 
-    const optionsHTML = SERVICES_DATA.societies.map(s => `
+    // Get societies list copy
+    const societies = [...SERVICES_DATA.societies];
+    
+    // If current logged-in user has a custom society, add it to the option list so it is selectable
+    if (this.state.currentUser && this.state.currentUser.society) {
+      const uSoc = this.state.currentUser.society;
+      const uSocLower = uSoc.toLowerCase();
+      const exists = societies.some(s => s.id === uSocLower || s.name.toLowerCase() === uSocLower);
+      if (!exists) {
+        societies.push({ id: uSocLower, name: uSoc });
+      }
+    }
+
+    const optionsHTML = societies.map(s => `
       <option value="${s.id}">${s.name}</option>
     `).join('');
 
@@ -194,7 +312,7 @@ class ServifyApp {
       if (val === 'all') {
         banner?.classList.add('hidden');
       } else {
-        const found = SERVICES_DATA.societies.find(s => s.id === val);
+        const found = societies.find(s => s.id === val);
         const bannerName = document.getElementById('society-banner-name');
         if (banner && bannerName && found) {
           bannerName.textContent = found.name;
@@ -206,8 +324,14 @@ class ServifyApp {
       }
     };
 
-    headerSelect.addEventListener('change', (e) => handleSocietyChange(e.target.value));
-    sidebarSelect.addEventListener('change', (e) => handleSocietyChange(e.target.value));
+    // Remove old listeners to prevent duplication
+    const newHeaderSelect = headerSelect.cloneNode(true);
+    headerSelect.parentNode.replaceChild(newHeaderSelect, headerSelect);
+    newHeaderSelect.addEventListener('change', (e) => handleSocietyChange(e.target.value));
+
+    const newSidebarSelect = sidebarSelect.cloneNode(true);
+    sidebarSelect.parentNode.replaceChild(newSidebarSelect, sidebarSelect);
+    newSidebarSelect.addEventListener('change', (e) => handleSocietyChange(e.target.value));
   }
 
   checkQRSociety() {
@@ -590,10 +714,220 @@ class ServifyApp {
   }
 
   quickSearch(catId) {
-    this.state.activeFilterCategory = catId;
-    const filterCat = document.getElementById('filter-category');
-    if (filterCat) filterCat.value = catId;
-    this.navigate('explore-view');
+    const modal = document.getElementById('category-contractors-modal');
+    const title = document.getElementById('category-modal-title');
+    const prosListContainer = document.getElementById('category-modal-pros-list');
+
+    if (!modal || !prosListContainer) return;
+
+    // Filter contractors matching category
+    const matchingPros = this.state.providers.filter(p => p.category === catId);
+    const categoryName = catId.charAt(0).toUpperCase() + catId.slice(1);
+    
+    if (title) title.textContent = `Available ${categoryName} Specialists`;
+    modal.classList.remove('hidden');
+
+    if (matchingPros.length === 0) {
+      prosListContainer.innerHTML = `<p class="text-muted text-center py-4">No verified partners in this category at the moment.</p>`;
+      return;
+    }
+
+    prosListContainer.innerHTML = matchingPros.map(pro => {
+      // Build reviews HTML
+      const reviewsHTML = pro.reviews && pro.reviews.length > 0
+        ? pro.reviews.map(rev => `
+            <div style="background: var(--bg-primary); border: 1px solid var(--border); padding: 0.75rem; border-radius: 0.5rem; margin-top: 0.5rem; font-size: 0.85rem;">
+              <div style="display: flex; justify-content: space-between; font-weight: 600; margin-bottom: 0.25rem;">
+                <span style="color: var(--text-primary);">${rev.author}</span>
+                <span style="color: var(--accent);">⭐ ${rev.rating}</span>
+              </div>
+              <p style="margin: 0; color: var(--text-secondary); line-height: 1.4;">"${rev.text}"</p>
+              <span style="font-size: 0.75rem; color: var(--text-muted); display: block; margin-top: 0.25rem;">${rev.date}</span>
+            </div>
+          `).join('')
+        : '<p class="text-muted" style="font-size: 0.85rem;">No customer reviews yet.</p>';
+
+      return `
+        <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 1rem; padding: 1.5rem; box-shadow: var(--card-shadow);">
+          <!-- Top: Info Row -->
+          <div style="display: flex; gap: 1rem; align-items: flex-start;">
+            <img src="${pro.avatar}" alt="${pro.name}" style="width: 4rem; height: 4rem; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary-light);">
+            <div style="flex-grow: 1;">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h4 style="font-size: 1.15rem; margin: 0; font-weight: 700; color: var(--text-primary);">${pro.name}</h4>
+                <span style="font-weight: 700; color: var(--primary); font-size: 1.1rem;">$${pro.hourlyRate}/hr</span>
+              </div>
+              <p class="text-muted" style="font-size: 0.85rem; margin: 0.15rem 0;">${pro.tagline}</p>
+              <div style="display: flex; gap: 0.75rem; font-size: 0.8rem; font-weight: 600; margin-top: 0.25rem;">
+                <span style="color: var(--accent);"><i data-lucide="star" style="display:inline; width:0.85rem; height:0.85rem; fill:var(--accent);"></i> ⭐ ${pro.rating} (${pro.reviewsCount} Reviews)</span>
+                <span style="color: var(--text-secondary);"><i data-lucide="briefcase" style="display:inline; width:0.85rem; height:0.85rem;"></i> ${pro.experience} Years Exp</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Mid: Skills -->
+          <div style="margin-top: 0.75rem; display: flex; flex-wrap: wrap; gap: 0.35rem;">
+            ${pro.skills.map(s => `<span style="font-size: 0.75rem; background: var(--bg-offset); border: 1px solid var(--border); padding: 0.15rem 0.5rem; border-radius: 0.25rem; font-weight: 500;">${s}</span>`).join('')}
+          </div>
+
+          <!-- Collapsible: Neighbor Comments -->
+          <div style="margin-top: 1rem; border-top: 1px solid var(--border); padding-top: 0.75rem;">
+            <strong style="font-size: 0.85rem; color: var(--text-primary); display: block; margin-bottom: 0.5rem;"><i data-lucide="message-square" style="display:inline; width:0.85rem; height:0.85rem; color:var(--primary);"></i> Neighbor Comments & Reviews</strong>
+            <div style="display: flex; flex-direction: column; gap: 0.5rem; max-height: 150px; overflow-y: auto; padding-right: 0.25rem;">
+              ${reviewsHTML}
+            </div>
+          </div>
+
+          <!-- Bottom: Expandable Request Form -->
+          <div style="margin-top: 1.25rem; border-top: 1px dashed var(--border); padding-top: 1rem; text-align: right;">
+            <button class="btn btn-primary btn-small" onclick="app.toggleRequestForm('${pro.id}')" id="btn-select-${pro.id}">
+              Select Contractor
+            </button>
+
+            <!-- Slide-down Request Form Panel -->
+            <div id="request-panel-${pro.id}" class="hidden text-left mt-3" style="background: var(--bg-offset); padding: 1.25rem; border-radius: 0.75rem; border: 1px solid var(--border); animation: fadeIn 0.3s ease;">
+              <h4 style="font-size: 0.95rem; font-weight: 700; margin-bottom: 0.75rem; color: var(--text-primary);">Inspection Request details</h4>
+              
+              <div class="form-group mb-3">
+                <label class="input-label-small" style="font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 0.25rem;">Your Address where inspection is held</label>
+                <input type="text" id="req-address-${pro.id}" class="form-input-small" style="width: 100%;" value="Gokuldham Society, Building B, Room 402" required>
+              </div>
+
+              <div class="form-group mb-3">
+                <label class="input-label-small" style="font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 0.25rem;">Describe the work/problem briefly</label>
+                <textarea id="req-desc-${pro.id}" class="form-input-small" style="width: 100%; height: 3.5rem; resize: vertical;" placeholder="e.g. Bathroom basin pipe leakage, Ceiling fan short circuit..." required></textarea>
+              </div>
+
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;" class="mb-4">
+                <div class="form-group">
+                  <label class="input-label-small" style="font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 0.25rem;">Inspection Date</label>
+                  <input type="date" id="req-date-${pro.id}" class="form-input-small" style="width: 100%;" required>
+                </div>
+                <div class="form-group">
+                  <label class="input-label-small" style="font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 0.25rem;">Inspection Time</label>
+                  <input type="time" id="req-time-${pro.id}" class="form-input-small" style="width: 100%;" value="10:00" required>
+                </div>
+              </div>
+
+              <button class="btn btn-primary btn-full" onclick="app.submitInspectionRequest('${pro.id}')" style="font-size: 0.9rem;">
+                Send Inspection Request (120s timer starts)
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    // Pre-populate date pickers in modal form
+    matchingPros.forEach(pro => {
+      const dateInp = document.getElementById(`req-date-${pro.id}`);
+      if (dateInp) {
+        const today = new Date().toISOString().split('T')[0];
+        dateInp.value = today;
+        dateInp.min = today;
+      }
+    });
+
+    if (window.lucide) window.lucide.createIcons();
+  }
+
+  closeCategoryModal() {
+    const modal = document.getElementById('category-contractors-modal');
+    if (modal) modal.classList.add('hidden');
+  }
+
+  toggleRequestForm(proId) {
+    const panel = document.getElementById(`request-panel-${proId}`);
+    const btn = document.getElementById(`btn-select-${proId}`);
+    if (panel) {
+      if (panel.classList.contains('hidden')) {
+        panel.classList.remove('hidden');
+        btn.textContent = "Cancel Selection";
+        btn.classList.add('btn-secondary');
+        btn.classList.remove('btn-primary');
+      } else {
+        panel.classList.add('hidden');
+        btn.textContent = "Select Contractor";
+        btn.classList.remove('btn-secondary');
+        btn.classList.add('btn-primary');
+      }
+    }
+  }
+
+  async submitInspectionRequest(proId) {
+    const address = document.getElementById(`req-address-${proId}`).value.trim();
+    const desc = document.getElementById(`req-desc-${proId}`).value.trim();
+    const dateVal = document.getElementById(`req-date-${proId}`).value;
+    const timeVal = document.getElementById(`req-time-${proId}`).value;
+
+    if (!address || !desc || !dateVal || !timeVal) {
+      this.showToast("Please fill in all inspection details.");
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/bookings`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          providerId: proId,
+          date: dateVal,
+          time: timeVal,
+          clientName: this.state.currentUserName,
+          clientAddress: address,
+          clientDescription: desc
+        })
+      });
+
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || 'Failed to submit inspection request.');
+      }
+
+      const newBooking = await response.json();
+      this.state.bookings.unshift(newBooking);
+    } catch (err) {
+      console.warn('API error, falling back to local simulation request creation:', err);
+      const pro = this.state.providers.find(p => p.id === proId);
+      const newBooking = {
+        id: 'b_' + Date.now(),
+        providerId: proId,
+        providerName: pro ? pro.name : 'Vetted Pro',
+        providerCategory: pro ? pro.category : 'Electrician',
+        providerAvatar: pro ? pro.avatar : 'https://images.unsplash.com/photo-1540569014015-19a7be504e3a?w=200&h=200&fit=crop&q=80',
+        clientName: this.state.currentUserName,
+        clientAddress: address,
+        clientDescription: desc,
+        date: dateVal,
+        time: timeVal,
+        servicesSelected: [{ name: 'On-site Inspection', price: 0 }],
+        subtotalPrice: 0,
+        serviceFee: 5.00,
+        platformCommission: 0,
+        workerPayout: 0,
+        totalPrice: 5.00,
+        status: 'pending',
+        acknowledgmentTimer: 120,
+        requestTimestamp: Date.now(),
+        currentPhase: 0,
+        phaseTimestamps: {},
+        chatHistory: [
+          {
+            sender: 'provider',
+            text: `Hi ${this.state.currentUserName}! I received your request for a ${pro ? pro.category : 'Electrician'} inspection. I have 120 seconds to accept this lead!`,
+            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+          }
+        ]
+      };
+      this.state.bookings.unshift(newBooking);
+    }
+
+    this.saveState();
+    this.closeCategoryModal();
+    this.showToast(`Request sent to contractor!`);
+    
+    // Jump to dashboard
+    this.navigate('user-dashboard-view');
   }
 
   updateExploreResults() {
@@ -604,7 +938,7 @@ class ServifyApp {
     // Perform filter
     let results = this.state.providers.filter(pro => {
       // 0. Society filter
-      if (this.state.selectedSociety !== 'all') {
+      if (this.state.selectedSociety !== 'all' && this.state.selectedSociety !== '') {
         if (!pro.societies || !pro.societies.includes(this.state.selectedSociety)) {
           return false;
         }
@@ -698,7 +1032,8 @@ class ServifyApp {
           
           <div class="list-card-stats">
             <span class="list-card-stats-item"><i data-lucide="star" class="star-filled"></i> <strong>${pro.rating}</strong> (${pro.reviewsCount} reviews)</span>
-            <span class="list-card-stats-item"><i data-lucide="briefcase"></i> ${pro.experience} years experience</span>
+            <span class="list-card-stats-item"><i data-lucide="briefcase"></i> ${pro.experience} years exp</span>
+            <span class="list-card-stats-item"><i data-lucide="map-pin"></i> ${pro.address || (pro.societies && pro.societies.length > 0 ? pro.societies.map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(', ') : 'Gokuldham')}</span>
           </div>
         </div>
       </div>
@@ -756,6 +1091,11 @@ class ServifyApp {
     document.getElementById('detail-bio').textContent = pro.bio;
     document.getElementById('detail-big-rating').textContent = pro.rating;
     document.getElementById('detail-reviews-num').textContent = pro.reviewsCount;
+    
+    const detailAddress = document.getElementById('detail-address');
+    if (detailAddress) {
+      detailAddress.textContent = pro.address || (pro.societies && pro.societies.length > 0 ? pro.societies.map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(', ') : 'Gokuldham Area');
+    }
 
     // Phone Call display update
     const callLink = document.getElementById('detail-phone-link');
@@ -922,12 +1262,11 @@ class ServifyApp {
 
       const bookingDate = document.getElementById('booking-date').value;
       const bookingTime = document.getElementById('booking-time').value;
-      const serviceFee = 5.00;
-      const totalPrice = subtotal + serviceFee;
+      const totalPrice = subtotal;
 
-      // Platform commission split
-      const platformCommission = subtotal * 0.15; // 15% platform commission
-      const workerPayout = subtotal * 0.85;       // 85% payout to worker/contractor
+      // Platform commission split (Direct/No markup)
+      const platformCommission = 0;
+      const workerPayout = subtotal;
 
       // Login Gate
       if (!this.state.currentUser) {
@@ -989,9 +1328,9 @@ class ServifyApp {
           time: bookingTime,
           servicesSelected: selectedServices,
           subtotalPrice: subtotal,
-          serviceFee: serviceFee,
-          platformCommission: platformCommission,
-          workerPayout: workerPayout,
+          serviceFee: 0,
+          platformCommission: 0,
+          workerPayout: subtotal,
           totalPrice: totalPrice,
           status: 'pending',
           chatHistory: [
@@ -1091,6 +1430,14 @@ class ServifyApp {
     const customerCard = document.getElementById('role-card-customer');
     const providerCard = document.getElementById('role-card-provider');
 
+    // Get input references
+    const rateInp = document.getElementById('auth-prov-rate');
+    const taglineInp = document.getElementById('auth-prov-tagline');
+    const bioInp = document.getElementById('auth-prov-bio');
+
+    const tabRegister = document.getElementById('tab-register');
+    const isRegisterMode = tabRegister && tabRegister.classList.contains('active');
+
     if (role === 'provider') {
       if (providerFieldsGroup) providerFieldsGroup.classList.remove('hidden');
       if (customerSocietyGroup) customerSocietyGroup.classList.add('hidden');
@@ -1100,6 +1447,11 @@ class ServifyApp {
       // Update inputs inside providerCard
       const inputRoleProvider = providerCard ? providerCard.querySelector('input') : null;
       if (inputRoleProvider) inputRoleProvider.checked = true;
+
+      // Set required fields for Provider only if in Register mode
+      if (rateInp) rateInp.required = isRegisterMode;
+      if (taglineInp) taglineInp.required = isRegisterMode;
+      if (bioInp) bioInp.required = isRegisterMode;
     } else {
       if (providerFieldsGroup) providerFieldsGroup.classList.add('hidden');
       if (customerSocietyGroup) customerSocietyGroup.classList.remove('hidden');
@@ -1109,6 +1461,11 @@ class ServifyApp {
       // Update inputs inside customerCard
       const inputRoleCustomer = customerCard ? customerCard.querySelector('input') : null;
       if (inputRoleCustomer) inputRoleCustomer.checked = true;
+
+      // Reset required fields for Provider
+      if (rateInp) rateInp.required = false;
+      if (taglineInp) taglineInp.required = false;
+      if (bioInp) bioInp.required = false;
     }
   }
 
@@ -1127,6 +1484,12 @@ class ServifyApp {
     const societyGroup = document.getElementById('register-society-group');
     const providerFieldsGroup = document.getElementById('register-provider-fields-group');
 
+    // Input references
+    const nameInp = document.getElementById('auth-name');
+    const phoneInp = document.getElementById('auth-phone');
+    const emailInp = document.getElementById('auth-email');
+    const passwordInp = document.getElementById('auth-password');
+
     // Clear alert
     const errorAlert = document.getElementById('auth-error-alert');
     if (errorAlert) errorAlert.classList.add('hidden');
@@ -1144,6 +1507,12 @@ class ServifyApp {
       if (phoneGroup) phoneGroup.classList.remove('hidden');
       if (roleSelectionGroup) roleSelectionGroup.classList.remove('hidden');
       
+      // Set required
+      if (nameInp) nameInp.required = true;
+      if (phoneInp) phoneInp.required = true;
+      if (emailInp) emailInp.required = true;
+      if (passwordInp) passwordInp.required = true;
+
       // Check current role selector state to show appropriate fields
       const currentRole = document.querySelector('input[name="auth-role"]:checked')?.value || 'customer';
       this.toggleRegisterRoleFields(currentRole);
@@ -1161,6 +1530,20 @@ class ServifyApp {
       if (roleSelectionGroup) roleSelectionGroup.classList.add('hidden');
       if (societyGroup) societyGroup.classList.add('hidden');
       if (providerFieldsGroup) providerFieldsGroup.classList.add('hidden');
+
+      // Clear required
+      if (nameInp) nameInp.required = false;
+      if (phoneInp) phoneInp.required = false;
+      if (emailInp) emailInp.required = true;
+      if (passwordInp) passwordInp.required = true;
+
+      // Reset provider required fields
+      const rateInp = document.getElementById('auth-prov-rate');
+      const taglineInp = document.getElementById('auth-prov-tagline');
+      const bioInp = document.getElementById('auth-prov-bio');
+      if (rateInp) rateInp.required = false;
+      if (taglineInp) taglineInp.required = false;
+      if (bioInp) bioInp.required = false;
     }
     
     // Refresh dynamic icons
@@ -1249,7 +1632,7 @@ class ServifyApp {
       const name = document.getElementById('auth-name').value.trim();
       const phone = document.getElementById('auth-phone').value.trim();
       const role = document.querySelector('input[name="auth-role"]:checked')?.value || 'customer';
-      const society = document.getElementById('auth-society').value;
+      const society = document.getElementById('auth-society').value.trim();
 
       // Provider details
       const providerCategory = document.getElementById('auth-prov-category')?.value || '';
@@ -1260,12 +1643,22 @@ class ServifyApp {
       const providerAvatar = document.getElementById('auth-prov-avatar')?.value?.trim() || '';
       const providerAddress = document.getElementById('auth-prov-address')?.value?.trim() || '';
 
-      if (!name) {
+      if (!name || !phone) {
         if (errorAlert && errorText) {
-          errorText.textContent = 'Please enter your full name.';
+          errorText.textContent = 'Please fill in all mandatory fields (Name, Phone, Email, Password).';
           errorAlert.classList.remove('hidden');
         }
         return;
+      }
+
+      if (role === 'provider') {
+        if (!providerHourlyRate || !providerTagline || !providerBio) {
+          if (errorAlert && errorText) {
+            errorText.textContent = 'Please fill in all service provider fields marked with a star (*).';
+            errorAlert.classList.remove('hidden');
+          }
+          return;
+        }
       }
 
       try {

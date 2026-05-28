@@ -11,6 +11,10 @@ const PORT = process.env.PORT || 5000;
 
 app.use(cors());
 app.use(express.json());
+app.use((req, res, next) => {
+  console.log(`[BACKEND] ${req.method} ${req.url}`);
+  next();
+});
 
 // Connect to MongoDB
 mongoose.connect(process.env.MONGO_URI)
@@ -108,6 +112,154 @@ app.post('/api/bookings', async (req, res) => {
     console.error(err);
     res.status(500).json({ error: 'Database error' });
   }
+});
+
+// 3.5 Contractor Acknowledge Lead
+app.post('/api/bookings/:id/acknowledge', (req, res) => {
+  const db = readDB();
+  const booking = db.bookings.find(b => b.id === req.params.id);
+  if (!booking) {
+    return res.status(404).json({ error: 'Booking not found.' });
+  }
+
+  booking.status = 'acknowledged';
+  booking.chatHistory.push({
+    sender: 'provider',
+    text: "Lead Acknowledged! I have secured your request and unlocked your address. I will now perform the site inspection to prepare your detailed quotation.",
+    time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  });
+
+  writeDB(db);
+  res.json(booking);
+});
+
+// 3.6 Contractor Upload Detailed Quotation
+app.post('/api/bookings/:id/quote', (req, res) => {
+  const { contractorQuote, workerCount, estimatedHours, quoteDetails } = req.body;
+  if (!contractorQuote || contractorQuote <= 0) {
+    return res.status(400).json({ error: 'Invalid quotation amount.' });
+  }
+
+  const db = readDB();
+  const booking = db.bookings.find(b => b.id === req.params.id);
+  if (!booking) {
+    return res.status(404).json({ error: 'Booking not found.' });
+  }
+
+  const quoteVal = parseFloat(contractorQuote);
+  const total = quoteVal;
+
+  booking.status = 'quoted';
+  booking.contractorQuote = quoteVal;
+  booking.subtotalPrice = quoteVal;
+  booking.platformMarkup = 0;
+  booking.platformCommission = 0; // zero platform commission
+  booking.workerPayout = quoteVal; // 100% payout to contractor
+  booking.workerCount = parseInt(workerCount) || 1;
+  booking.estimatedHours = parseInt(estimatedHours) || 2;
+  booking.totalPrice = total;
+  booking.servicesSelected = [{ name: quoteDetails || 'Contractor Work Quote', price: quoteVal }];
+
+  booking.chatHistory.push({
+    sender: 'provider',
+    text: `Quotation uploaded: $${quoteVal.toFixed(2)} Total. Estimated completion time is ${estimatedHours} hours using ${workerCount} employees. Please click Hire to initiate work!`,
+    time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  });
+
+  writeDB(db);
+  res.json(booking);
+});
+
+// 3.7 Client Hire (Approved Quote & Launch Project)
+app.post('/api/bookings/:id/hire', (req, res) => {
+  const db = readDB();
+  const booking = db.bookings.find(b => b.id === req.params.id);
+  if (!booking) {
+    return res.status(404).json({ error: 'Booking not found.' });
+  }
+
+  booking.status = 'hired';
+  booking.currentPhase = 1; // 1: Work Initiated
+  booking.phaseTimestamps = {
+    phase1_start: Date.now()
+  };
+
+  booking.chatHistory.push({
+    sender: 'system',
+    text: "Project officially HIRED and LAUNCHED! Progress phase set to Phase 1: Work Initiated.",
+    time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  });
+
+  writeDB(db);
+  res.json(booking);
+});
+
+// 3.8 Contractor Update Progress Phase
+app.post('/api/bookings/:id/progress', (req, res) => {
+  const { phase } = req.body;
+  const targetPhase = parseInt(phase);
+  if (![1, 2, 3, 4].includes(targetPhase)) {
+    return res.status(400).json({ error: 'Invalid phase value. Must be 1, 2, 3, or 4.' });
+  }
+
+  const db = readDB();
+  const booking = db.bookings.find(b => b.id === req.params.id);
+  if (!booking) {
+    return res.status(404).json({ error: 'Booking not found.' });
+  }
+
+  booking.currentPhase = targetPhase;
+  const key = `phase${targetPhase}_start`;
+  booking.phaseTimestamps = booking.phaseTimestamps || {};
+  booking.phaseTimestamps[key] = Date.now();
+
+  let textMsg = "";
+  if (targetPhase === 1) textMsg = "Progress Updated: Work Initiated (Phase 1)";
+  else if (targetPhase === 2) textMsg = "Progress Updated: Initial Phase (Phase 2)";
+  else if (targetPhase === 3) textMsg = "Progress Updated: Middle Phase (Phase 3)";
+  else if (targetPhase === 4) {
+    booking.status = 'payment_pending';
+    booking.phaseTimestamps.phase4_end = Date.now();
+    textMsg = "Progress Updated: Job Finished (Phase 4). Awaiting Client Payment!";
+  }
+
+  booking.chatHistory.push({
+    sender: 'provider',
+    text: textMsg,
+    time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  });
+
+  writeDB(db);
+  res.json(booking);
+});
+
+// 3.9 Client Process Payment & Add Payouts
+app.post('/api/bookings/:id/pay', (req, res) => {
+  const { paymentMode } = req.body;
+  const db = readDB();
+  const booking = db.bookings.find(b => b.id === req.params.id);
+  if (!booking) {
+    return res.status(404).json({ error: 'Booking not found.' });
+  }
+
+  booking.status = 'completed';
+  booking.paymentCompleted = true;
+  booking.paymentMode = paymentMode || 'direct';
+
+  booking.chatHistory.push({
+    sender: 'system',
+    text: `Direct payment of $${booking.totalPrice.toFixed(2)} completed successfully!`,
+    time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  });
+
+  booking.chatHistory.push({
+    sender: 'provider',
+    text: "Thank you for the payment and choosing Servify! The contract has been completed. Please rate my services!",
+    time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  });
+
+  writeDB(db);
+  res.json(booking);
 });
 
 // 4. Cancel booking (Customer action)

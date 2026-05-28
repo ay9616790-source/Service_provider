@@ -1,6 +1,39 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="light">
 <head>
+  <script>
+    window.onerror = function(message, source, lineno, colno, error) {
+      const errorDetails = {
+        message: message,
+        source: source,
+        lineno: lineno,
+        colno: colno,
+        stack: error ? error.stack : ''
+      };
+      console.error("Global Error Caught:", errorDetails);
+      fetch('http://localhost:5000/api/log-error', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(errorDetails)
+      }).catch(e => {});
+      return false;
+    };
+    window.addEventListener('unhandledrejection', function(event) {
+      const errorDetails = {
+        message: 'Unhandled Promise Rejection: ' + event.reason,
+        source: '',
+        lineno: 0,
+        colno: 0,
+        stack: event.reason && event.reason.stack ? event.reason.stack : String(event.reason)
+      };
+      console.error("Unhandled Promise Rejection Caught:", errorDetails);
+      fetch('http://localhost:5000/api/log-error', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(errorDetails)
+      }).catch(e => {});
+    });
+  </script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Servify - Trusted Local Home Service Providers</title>
@@ -35,7 +68,7 @@
       </nav>
 
       <!-- Society Selector -->
-      <div class="society-selector-wrapper hidden">
+      <div class="society-selector-wrapper" id="header-society-wrapper">
         <i data-lucide="map-pin" class="pin-icon"></i>
         <select id="header-society-select" class="society-select-dropdown">
           <option value="all">All Societies</option>
@@ -323,6 +356,7 @@
                     <span class="stat-item"><i data-lucide="star" class="star-filled"></i> <strong id="detail-rating">4.9</strong> (<span id="detail-reviews-count">142</span> reviews)</span>
                     <span class="stat-item"><i data-lucide="briefcase"></i> <span id="detail-experience">8</span> years exp</span>
                     <span class="stat-item"><i data-lucide="dollar-sign"></i> <span id="detail-hourly">45</span>/hr starting</span>
+                    <span class="stat-item"><i data-lucide="map-pin"></i> <span id="detail-address">Gokuldham Society</span></span>
                   </div>
                   <div class="profile-call-box mt-3">
                     <a href="tel:" id="detail-phone-link" class="btn btn-primary btn-call-now">
@@ -653,19 +687,31 @@
             <p class="card-subtitle">Manage contractor name, phone, tagline, and biography</p>
             <form id="provider-profile-form" class="mt-3">
               <div class="form-group" style="margin-bottom: 1rem;">
-                <label for="edit-pro-name" class="input-label-small" style="font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 0.25rem;">Contractor Name</label>
+                <label for="edit-pro-name" class="input-label-small" style="font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 0.25rem;">Contractor Name <span style="color: #ef4444; font-weight: bold;">*</span></label>
                 <input type="text" id="edit-pro-name" class="form-input-small" style="width: 100%;" required>
               </div>
               <div class="form-group" style="margin-bottom: 1rem;">
-                <label for="edit-pro-phone" class="input-label-small" style="font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 0.25rem;">Contact Number</label>
+                <label for="edit-pro-phone" class="input-label-small" style="font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 0.25rem;">Contact Number <span style="color: #ef4444; font-weight: bold;">*</span></label>
                 <input type="text" id="edit-pro-phone" class="form-input-small" style="width: 100%;" required>
               </div>
               <div class="form-group" style="margin-bottom: 1rem;">
-                <label for="edit-pro-tagline" class="input-label-small" style="font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 0.25rem;">Professional Tagline</label>
+                <label for="edit-pro-tagline" class="input-label-small" style="font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 0.25rem;">Professional Tagline <span style="color: #ef4444; font-weight: bold;">*</span></label>
                 <input type="text" id="edit-pro-tagline" class="form-input-small" style="width: 100%;" required>
               </div>
               <div class="form-group" style="margin-bottom: 1rem;">
-                <label for="edit-pro-bio" class="input-label-small" style="font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 0.25rem;">Biography</label>
+                <label for="edit-pro-avatar" class="input-label-small" style="font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 0.25rem;">Profile Photo URL <span style="color: #ef4444; font-weight: bold;">*</span></label>
+                <input type="text" id="edit-pro-avatar" class="form-input-small" style="width: 100%;" required>
+              </div>
+              <div class="form-group" style="margin-bottom: 1rem;">
+                <label for="edit-pro-experience" class="input-label-small" style="font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 0.25rem;">Years of Experience <span style="color: #ef4444; font-weight: bold;">*</span></label>
+                <input type="number" id="edit-pro-experience" class="form-input-small" style="width: 100%;" min="0" required>
+              </div>
+              <div class="form-group" style="margin-bottom: 1rem;">
+                <label for="edit-pro-address" class="input-label-small" style="font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 0.25rem;">Address / Service Area <span style="color: #ef4444; font-weight: bold;">*</span></label>
+                <input type="text" id="edit-pro-address" class="form-input-small" style="width: 100%;" required>
+              </div>
+              <div class="form-group" style="margin-bottom: 1rem;">
+                <label for="edit-pro-bio" class="input-label-small" style="font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 0.25rem;">Biography <span style="color: #ef4444; font-weight: bold;">*</span></label>
                 <textarea id="edit-pro-bio" class="form-input-small" style="width: 100%; height: 5rem; resize: vertical;" required></textarea>
               </div>
               <button type="submit" class="btn btn-primary btn-full mt-2">Update Profile Info</button>
@@ -732,7 +778,7 @@
 
             <!-- REGISTER ONLY: Full Name -->
             <div class="form-group hidden" id="register-name-group">
-              <label for="auth-name" class="input-label-small">Full Name</label>
+              <label for="auth-name" class="input-label-small">Full Name <span style="color: #ef4444; font-weight: bold; margin-left: 0.15rem;">*</span></label>
               <div class="input-wrapper">
                 <i data-lucide="user" class="input-icon"></i>
                 <input type="text" id="auth-name" class="form-input-small" placeholder="Enter your full name">
@@ -741,7 +787,7 @@
 
             <!-- Email -->
             <div class="form-group">
-              <label for="auth-email" class="input-label-small">Email Address</label>
+              <label for="auth-email" class="input-label-small">Email Address <span style="color: #ef4444; font-weight: bold; margin-left: 0.15rem;">*</span></label>
               <div class="input-wrapper">
                 <i data-lucide="mail" class="input-icon"></i>
                 <input type="email" id="auth-email" class="form-input-small" placeholder="name@example.com" required>
@@ -750,7 +796,7 @@
 
             <!-- Password -->
             <div class="form-group">
-              <label for="auth-password" class="input-label-small">Password</label>
+              <label for="auth-password" class="input-label-small">Password <span style="color: #ef4444; font-weight: bold; margin-left: 0.15rem;">*</span></label>
               <div class="input-wrapper">
                 <i data-lucide="lock" class="input-icon"></i>
                 <input type="password" id="auth-password" class="form-input-small" placeholder="Enter password" required>
@@ -762,7 +808,7 @@
 
             <!-- REGISTER ONLY: Phone Number -->
             <div class="form-group hidden" id="register-phone-group">
-              <label for="auth-phone" class="input-label-small">Phone Number</label>
+              <label for="auth-phone" class="input-label-small">Phone Number <span style="color: #ef4444; font-weight: bold; margin-left: 0.15rem;">*</span></label>
               <div class="input-wrapper">
                 <i data-lucide="phone" class="input-icon"></i>
                 <input type="tel" id="auth-phone" class="form-input-small" placeholder="+91 XXXXX XXXXX">
@@ -771,15 +817,16 @@
 
             <!-- REGISTER CUSTOMER ONLY: Society -->
             <div class="form-group hidden" id="register-society-group">
-              <label for="auth-society" class="input-label-small">Select Home Society</label>
+              <label for="auth-society" class="input-label-small">Select or Type Home Society (Optional)</label>
               <div class="input-wrapper">
                 <i data-lucide="map-pin" class="input-icon"></i>
-                <select id="auth-society" class="form-input-small">
-                  <option value="gokuldham">Gokuldham Society</option>
-                  <option value="shanti_kunj">Shanti Kunj Heights</option>
-                  <option value="green_valley">Green Valley Apartments</option>
-                  <option value="royal_palms">Royal Palms Residency</option>
-                </select>
+                <input type="text" id="auth-society" class="form-input-small" list="societies-datalist" placeholder="Select or type society name...">
+                <datalist id="societies-datalist">
+                  <option value="Gokuldham Society"></option>
+                  <option value="Shanti Kunj Heights"></option>
+                  <option value="Green Valley Apartments"></option>
+                  <option value="Royal Palms Residency"></option>
+                </datalist>
               </div>
             </div>
 
@@ -852,6 +899,175 @@
         </div>
         
         <button class="btn btn-primary btn-full mt-4" id="submit-review-btn">Submit Rating</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 1. Beautiful User Selection / Auth Modal -->
+  <div id="auth-modal" class="modal hidden" style="background: rgba(11, 15, 25, 0.7); backdrop-filter: blur(16px);">
+    <div class="modal-content" style="max-width: 700px; padding: 2.5rem; border-radius: 1.5rem;">
+      <div class="text-center" style="margin-bottom: 2rem;">
+        <span class="logo-icon" style="font-size: 2.5rem;">⚡</span>
+        <h2 style="font-size: 2rem; margin-top: 0.5rem; background: linear-gradient(135deg, var(--primary) 0%, #a855f7 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Welcome to Servify</h2>
+        <p class="text-muted mt-2">Select a mock profile below to login instantly as Client or Contractor</p>
+      </div>
+
+      <div class="auth-columns" style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+        
+        <!-- Left: Clients Column -->
+        <div class="auth-col-card" style="background: var(--bg-offset); padding: 1.5rem; border-radius: 1rem; border: 1px solid var(--border);">
+          <h3 style="margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.5rem; font-size: 1.15rem; color: var(--primary);">
+            <i data-lucide="user"></i> Login as Client
+          </h3>
+          <div class="mock-profiles-list" style="display: flex; flex-direction: column; gap: 0.75rem;">
+            <div class="profile-card-select" onclick="app.loginAs('client', 'c1', 'Abhishek K.', 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&q=80')">
+              <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop&q=80" alt="Avatar">
+              <div>
+                <strong>Abhishek K.</strong>
+                <span>Premium Society Resident</span>
+              </div>
+            </div>
+            <div class="profile-card-select" onclick="app.loginAs('client', 'c2', 'Priya Sharma', 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop&q=80')">
+              <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100&h=100&fit=crop&q=80" alt="Avatar">
+              <div>
+                <strong>Priya Sharma</strong>
+                <span>Green Valley Heights</span>
+              </div>
+            </div>
+            <div class="profile-card-select" onclick="app.loginAs('client', 'c3', 'Vikram Malhotra', 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop&q=80')">
+              <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop&q=80" alt="Avatar">
+              <div>
+                <strong>Vikram Malhotra</strong>
+                <span>Royal Palms Resident</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Contractors Column -->
+        <div class="auth-col-card" style="background: var(--bg-offset); padding: 1.5rem; border-radius: 1rem; border: 1px solid var(--border);">
+          <h3 style="margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.5rem; font-size: 1.15rem; color: var(--success);">
+            <i data-lucide="briefcase"></i> Join as Partner Pro
+          </h3>
+          <div class="mock-profiles-list" style="display: flex; flex-direction: column; gap: 0.75rem; max-height: 250px; overflow-y: auto; padding-right: 0.25rem;">
+            <div class="profile-card-select" onclick="app.loginAs('contractor', 'p1', 'Alex Mercer', 'https://images.unsplash.com/photo-1540569014015-19a7be504e3a?w=100&h=100&fit=crop&q=80')">
+              <img src="https://images.unsplash.com/photo-1540569014015-19a7be504e3a?w=100&h=100&fit=crop&q=80" alt="Avatar">
+              <div>
+                <strong>Alex Mercer</strong>
+                <span>⚡ Electrician Pro</span>
+              </div>
+            </div>
+            <div class="profile-card-select" onclick="app.loginAs('contractor', 'p2', 'Sarah Jenkins', 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=100&h=100&fit=crop&q=80')">
+              <img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=100&h=100&fit=crop&q=80" alt="Avatar">
+              <div>
+                <strong>Sarah Jenkins</strong>
+                <span>🎨 Master Painter</span>
+              </div>
+            </div>
+            <div class="profile-card-select" onclick="app.loginAs('contractor', 'p3', 'Marcus Brody', 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop&q=80')">
+              <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=100&h=100&fit=crop&q=80" alt="Avatar">
+              <div>
+                <strong>Marcus Brody</strong>
+                <span>🪚 Custom Carpentry</span>
+              </div>
+            </div>
+            <div class="profile-card-select" onclick="app.loginAs('contractor', 'p4', 'Linus Oberg', 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=100&h=100&fit=crop&q=80')">
+              <img src="https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=100&h=100&fit=crop&q=80" alt="Avatar">
+              <div>
+                <strong>Linus Oberg</strong>
+                <span>🖼️ Wallpaper Decor</span>
+              </div>
+            </div>
+            <div class="profile-card-select" onclick="app.loginAs('contractor', 'p5', 'David Miller', 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=100&h=100&fit=crop&q=80')">
+              <img src="https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=100&h=100&fit=crop&q=80" alt="Avatar">
+              <div>
+                <strong>David Miller</strong>
+                <span>🚰 Sanitary Plumber</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. Gated Society Category Contractor List Modal -->
+  <div id="category-contractors-modal" class="modal hidden">
+    <div class="modal-content" style="max-width: 800px; padding: 2rem;">
+      <div class="modal-header">
+        <div>
+          <h3 id="category-modal-title" style="font-size: 1.5rem;">Available Electricians</h3>
+          <p class="text-muted" style="font-size: 0.85rem; margin-top: 0.15rem;">Vetted & neighbor-approved experts active in your area</p>
+        </div>
+        <button class="modal-close" onclick="app.closeCategoryModal()">&times;</button>
+      </div>
+      <div class="modal-body" style="padding-top: 1rem; max-height: 550px; overflow-y: auto;">
+        
+        <!-- Contractors List Container -->
+        <div id="category-modal-pros-list" style="display: flex; flex-direction: column; gap: 1.5rem;">
+          <!-- Dynamically populated from script -->
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. Contractor Upload Quotation Modal -->
+  <div id="contractor-quote-modal" class="modal hidden">
+    <div class="modal-content" style="max-width: 500px;">
+      <div class="modal-header">
+        <h3>Upload Project Quotation</h3>
+        <button class="modal-close" onclick="app.closeQuoteModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-subtitle">Submit estimated labor cost, team size, and timeline limits. Servify automatically applies the 15% platform markup split.</p>
+        
+        <form id="quote-submission-form" class="mt-4">
+          <div class="form-group mb-4">
+            <label for="quote-labor-cost" class="input-label-small" style="font-size: 0.85rem; font-weight: 600; display: block; margin-bottom: 0.25rem;">Estimated Labor Cost ($)</label>
+            <input type="number" id="quote-labor-cost" class="form-input-small" style="width: 100%;" placeholder="e.g. 250" required min="1">
+          </div>
+          <div class="form-group mb-4">
+            <label for="quote-worker-count" class="input-label-small" style="font-size: 0.85rem; font-weight: 600; display: block; margin-bottom: 0.25rem;">Allocated Employees Count</label>
+            <input type="number" id="quote-worker-count" class="form-input-small" style="width: 100%;" placeholder="e.g. 2" required min="1" value="1">
+          </div>
+          <div class="form-group mb-4">
+            <label for="quote-est-hours" class="input-label-small" style="font-size: 0.85rem; font-weight: 600; display: block; margin-bottom: 0.25rem;">Total Estimated Project Time (Hours)</label>
+            <input type="number" id="quote-est-hours" class="form-input-small" style="width: 100%;" placeholder="e.g. 4" required min="1">
+            <span class="call-hint-text mt-1" style="font-size: 0.75rem;">Timers will run in minutes (e.g. 4 hours = 4 minutes) for interactive testing!</span>
+          </div>
+          <div class="form-group mb-4">
+            <label for="quote-details" class="input-label-small" style="font-size: 0.85rem; font-weight: 600; display: block; margin-bottom: 0.25rem;">Scope & Materials Details</label>
+            <textarea id="quote-details" class="form-input-small" style="width: 100%; height: 4rem; resize: vertical;" placeholder="Include details like wire replacements, switch replacements..." required></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary btn-full mt-2">Upload & Deliver Quotation</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. Client Payment Gateway & Checkout Modal -->
+  <div id="client-payment-modal" class="modal hidden">
+    <div class="modal-content" style="max-width: 550px; padding: 2rem;">
+      <div class="modal-header">
+        <h3>Secure Checkout & Payout</h3>
+        <button class="modal-close" onclick="app.closePaymentModal()">&times;</button>
+      </div>
+      <div class="modal-body" style="padding-top: 1rem;">
+        <div style="background: var(--bg-offset); padding: 1.5rem; border-radius: 0.75rem; margin-bottom: 1.5rem; border: 1px solid var(--border); text-align: center;">
+          <h4 style="font-size: 0.9rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-secondary);">Direct Work Quotation</h4>
+          <div style="font-size: 2rem; font-weight: 800; color: var(--primary); margin: 0.5rem 0;">
+            $<span id="pay-total-cost">0.00</span>
+          </div>
+          <p style="font-size: 0.8rem; color: var(--text-secondary); margin: 0;">This amount is paid directly to the contractor for labor and materials.</p>
+        </div>
+
+        <form id="payment-checkout-form">
+          <p style="font-size: 0.85rem; color: var(--text-primary); margin-bottom: 1.25rem; text-align: center;">Please confirm that you have inspected the completed work and settled the payment directly with the contractor.</p>
+          <button type="submit" class="btn btn-primary btn-full" style="font-size: 1rem; padding: 0.75rem;">Confirm & Complete Booking</button>
+        </form>
+
       </div>
     </div>
   </div>
