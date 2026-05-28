@@ -30,7 +30,7 @@
       <nav class="main-nav">
         <a href="#" class="nav-link active" data-target="landing-view">Home</a>
         <a href="#" class="nav-link" data-target="explore-view">Explore Pros</a>
-        <a href="#" class="nav-link" data-target="user-dashboard-view" id="nav-bookings">My Bookings</a>
+        <a href="#" class="nav-link" data-target="user-dashboard-view" id="nav-bookings">Client Dashboard</a>
         <a href="#" class="nav-link" data-target="provider-dashboard-view" id="nav-provider-portal">Provider Portal</a>
       </nav>
 
@@ -453,15 +453,26 @@
     <!-- 4. USER DASHBOARD VIEW (MY BOOKINGS & CHAT) -->
     <section id="user-dashboard-view" class="view-panel">
       <div class="container dashboard-wrapper">
-        <h1 class="view-title">My Customer Dashboard</h1>
-        
+        <h1 class="view-title">Welcome, <span class="gradient-text" id="client-dashboard-name">Customer</span>!</h1>
+        <p class="section-subtitle mb-4">What service do you need today?</p>
         <div class="dashboard-tabs">
-          <button class="tab-btn active" data-tab="bookings-tab">My Bookings</button>
+          <button class="tab-btn active" data-tab="client-explore-tab">Explore Services</button>
+          <button class="tab-btn" data-tab="bookings-tab">My Bookings</button>
           <button class="tab-btn" data-tab="chat-tab" id="user-chat-tab-trigger">Direct Messages <span class="badge badge-pulse" id="unread-dot"></span></button>
         </div>
 
+        <!-- TAB CONTENT: EXPLORE SERVICES -->
+        <div id="client-explore-tab" class="dashboard-tab-content active">
+          <div class="section-container mt-2">
+            <h2 class="section-title">Explore by Category</h2>
+            <div class="categories-grid" id="client-categories-list">
+              <!-- Dynamically populated same as home page -->
+            </div>
+          </div>
+        </div>
+
         <!-- TAB CONTENT: MY BOOKINGS -->
-        <div id="bookings-tab" class="dashboard-tab-content active">
+        <div id="bookings-tab" class="dashboard-tab-content">
           <div class="bookings-grid-list" id="user-bookings-container">
             <!-- Dynamically populated bookings list -->
           </div>
@@ -508,6 +519,60 @@
           </div>
           <div class="status-indicator">
             <span class="pulse-indicator"></span> Live Accepting Jobs
+          </div>
+        </div>
+
+        <!-- Onboarding Modal Overlay -->
+        <div id="provider-onboarding-modal" class="modal hidden" style="z-index: 1000; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; position: fixed; inset: 0;">
+          <div class="modal-content" style="max-height: 90vh; overflow-y: auto; max-width: 600px; width: 90%;">
+            <div class="modal-header">
+              <h3>Complete Your Profile</h3>
+            </div>
+            <div class="modal-body">
+              <p class="modal-subtitle">Welcome! Please fill in all required details to start accepting jobs.</p>
+              <form id="onboarding-profile-form" class="mt-4">
+                <div class="form-group" style="margin-bottom: 1rem;">
+                  <label class="input-label-small" style="font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 0.25rem;">Full Name</label>
+                  <input type="text" id="ob-pro-name" class="form-input-small" style="width: 100%;" required>
+                </div>
+                <div class="form-group" style="margin-bottom: 1rem;">
+                  <label class="input-label-small" style="font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 0.25rem;">Phone Number</label>
+                  <input type="text" id="ob-pro-phone" class="form-input-small" style="width: 100%;" required>
+                </div>
+                <div class="form-group" style="margin-bottom: 1rem;">
+                  <label class="input-label-small" style="font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 0.25rem;">Email Address</label>
+                  <input type="email" id="ob-pro-email" class="form-input-small" style="width: 100%;" required>
+                </div>
+                <div class="form-group" style="margin-bottom: 1rem;">
+                  <label class="input-label-small" style="font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 0.25rem;">WhatsApp Number</label>
+                  <input type="text" id="ob-pro-whatsapp" class="form-input-small" style="width: 100%;" required>
+                </div>
+                <div class="form-group" style="margin-bottom: 1rem;">
+                  <label class="input-label-small" style="font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 0.25rem;">Service Category</label>
+                  <select id="ob-pro-category" class="form-input-small" style="width: 100%;" required>
+                    <option value="electrician">Electrician</option>
+                    <option value="carpenter">Carpenter</option>
+                    <option value="painter">Painter</option>
+                    <option value="wallpaper">Wallpaper Specialist</option>
+                    <option value="plumber">Plumber</option>
+                  </select>
+                </div>
+                <div class="form-group" style="margin-bottom: 1rem;">
+                  <label class="input-label-small" style="font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 0.25rem;">Address / Location</label>
+                  <input type="text" id="ob-pro-address" class="form-input-small" style="width: 100%;" required>
+                </div>
+                <div class="form-group" style="margin-bottom: 1rem;">
+                  <label class="input-label-small" style="font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 0.25rem;">Profile Photo (Upload from device)</label>
+                  <input type="file" id="ob-pro-photo" accept="image/*" class="form-input-small" style="width: 100%;">
+                  <img id="ob-pro-photo-preview" src="" style="display:none; max-width: 100px; max-height: 100px; margin-top: 10px; border-radius: 8px; object-fit: cover;">
+                </div>
+                <div class="form-group" style="margin-bottom: 1rem;">
+                  <label class="input-label-small" style="font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 0.25rem;">Biography / Tagline</label>
+                  <textarea id="ob-pro-bio" class="form-input-small" style="width: 100%; height: 5rem; resize: vertical;" required></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary btn-full mt-2">Save Profile Details</button>
+              </form>
+            </div>
           </div>
         </div>
 
@@ -718,44 +783,7 @@
               </div>
             </div>
 
-            <!-- REGISTER PROVIDER ONLY FIELDS -->
-            <div id="register-provider-fields-group" class="hidden">
-              <div class="form-group">
-                <label for="auth-prov-category" class="input-label-small">Service Category</label>
-                <div class="input-wrapper">
-                  <i data-lucide="briefcase" class="input-icon"></i>
-                  <select id="auth-prov-category" class="form-input-small">
-                    <option value="electrician">Electrician</option>
-                    <option value="carpenter">Carpenter</option>
-                    <option value="painter">Painter</option>
-                    <option value="wallpaper">Wallpaper Specialist</option>
-                    <option value="plumber">Plumber</option>
-                  </select>
-                </div>
-              </div>
-              
-              <div class="form-group">
-                <label for="auth-prov-rate" class="input-label-small">Hourly Rate ($)</label>
-                <div class="input-wrapper">
-                  <i data-lucide="dollar-sign" class="input-icon"></i>
-                  <input type="number" id="auth-prov-rate" class="form-input-small" placeholder="Hourly rate (e.g. 45)" min="1">
-                </div>
-              </div>
-              
-              <div class="form-group">
-                <label for="auth-prov-tagline" class="input-label-small">Professional Tagline</label>
-                <div class="input-wrapper">
-                  <i data-lucide="award" class="input-icon"></i>
-                  <input type="text" id="auth-prov-tagline" class="form-input-small" placeholder="e.g. Certified Expert Plumber">
-                </div>
-              </div>
-
-              <div class="form-group">
-                <label for="auth-prov-bio" class="input-label-small">Biography / Pitch</label>
-                <textarea id="auth-prov-bio" class="form-input-small" style="height: 4rem; resize: vertical;" placeholder="Introduce your expertise to customers..."></textarea>
-              </div>
-            </div>
-
+            <!-- REGISTER PROVIDER ONLY FIELDS (Removed to simplify registration) -->
             <button type="submit" id="auth-submit-btn" class="btn btn-primary btn-full mt-4">
               Sign In
             </button>
@@ -831,5 +859,7 @@
   <!-- App JavaScript files -->
   <script src="data.js"></script>
   <script src="app.js"></script>
+  <script src="customer.js"></script>
+  <script src="provider.js"></script>
 </body>
 </html>

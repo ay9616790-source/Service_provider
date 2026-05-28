@@ -2347,9 +2347,11 @@ a:hover {
 }
 
 /* Auth View Layout */
+#auth-view.active {
+  display: flex;
+}
 #auth-view {
   min-height: calc(100vh - 4.5rem);
-  display: flex;
   align-items: center;
   justify-content: center;
   background-color: var(--bg-primary);
@@ -2658,4 +2660,71 @@ a:hover {
     padding: 2rem 1.25rem;
     border-radius: 1.25rem;
   }
+}
+
+/* --- Modern UI Enhancements (Dynamic & Glassmorphism) --- */
+
+/* 1. Buttons Active/Ripple Animation */
+.btn:active {
+  transform: scale(0.95);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2) inset;
+}
+.btn {
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+/* 2. Inputs & Textareas Focus Glow & Scale */
+.form-input-small {
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+.form-input-small:focus {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(99, 102, 241, 0.15);
+  border-color: var(--primary);
+  outline: none;
+}
+
+/* 3. Input Labels Hover Animation */
+.form-group:focus-within label {
+  color: var(--primary);
+  transform: translateX(4px);
+  transition: transform 0.3s ease, color 0.3s ease;
+}
+label.input-label-small {
+  transition: transform 0.3s ease, color 0.3s ease;
+  display: inline-block;
+}
+
+/* 4. Glassmorphism on Modals & Auth Cards */
+.modal-content, .auth-card {
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+/* 5. Smooth Page Transitions for view panels */
+.view-panel.active {
+  animation: slideUpFadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+@keyframes slideUpFadeIn {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* 6. Provider/Category Card Lift and Glow */
+.provider-card-ui, .category-card {
+  transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.4s ease;
+}
+.provider-card-ui:hover, .category-card:hover {
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 20px 40px -10px rgba(99, 102, 241, 0.2);
+  border-color: var(--primary-light);
+}
+
+/* 7. General Container Animations */
+.container {
+  animation: fadeIn 0.6s ease-in-out;
 }
