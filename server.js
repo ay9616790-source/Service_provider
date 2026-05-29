@@ -467,6 +467,7 @@ app.post('/api/auth/register', async (req, res) => {
       } 
     });
   } catch (err) {
+    console.error('[API AUTH REGISTER ERROR]:', err);
     res.status(500).json({ error: 'Database error' });
   }
 });
@@ -499,6 +500,7 @@ app.post('/api/auth/login', async (req, res) => {
       }
     });
   } catch (err) {
+    console.error('[API AUTH LOGIN ERROR]:', err);
     res.status(500).json({ error: 'Database error' });
   }
 });

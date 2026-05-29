@@ -95,6 +95,14 @@ class ServifyApp {
 
   // --- STATE PERSISTENCE ---
   async loadState() {
+    // Auto-clear cache on new version release
+    const currentVersion = '3';
+    const savedVersion = localStorage.getItem('servify_version');
+    if (savedVersion !== currentVersion) {
+      localStorage.clear();
+      localStorage.setItem('servify_version', currentVersion);
+    }
+
     // Load local UI settings
     const savedState = localStorage.getItem('servify_state');
     if (savedState) {
@@ -493,7 +501,7 @@ class ServifyApp {
     
     const htmlContent = this.state.categories.map(cat => `
       <div class="category-card" onclick="app.quickSearch('${cat.id}')">
-        <div class="category-icon" style="background: ${cat.bgGradient}">${cat.icon}</div>
+        <div class="category-icon" style="background: ${cat.bgGradient}">${this.getCategoryIcon(cat.id)}</div>
         <h3>${cat.name}</h3>
         <p>${cat.description}</p>
       </div>
@@ -575,27 +583,28 @@ class ServifyApp {
 
     container.innerHTML = sorted.map(pro => `
       <div class="provider-card-ui">
-        <div class="provider-card-banner" style="background-image: url('${pro.banner && (pro.banner.startsWith('http') || pro.banner.startsWith('data:image')) ? pro.banner : 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=800&h=300&fit=crop&q=80'}')"></div>
         <div class="provider-card-body">
-          <img src="${pro.avatar && (pro.avatar.startsWith('http') || pro.avatar.startsWith('data:image')) ? pro.avatar : 'https://images.unsplash.com/photo-1540569014015-19a7be504e3a?w=200&h=200&fit=crop&q=80'}" alt="${pro.name}" class="provider-card-avatar">
-          <div class="provider-card-info">
-            <div class="provider-card-name-row">
-              <span class="provider-card-name">${pro.name}</span>
-              ${pro.isVerified ? `<span class="badge badge-verified"><i data-lucide="shield-check"></i></span>` : ''}
+          <div class="provider-card-header">
+            <img src="${pro.avatar && (pro.avatar.startsWith('http') || pro.avatar.startsWith('data:image')) ? pro.avatar : 'https://images.unsplash.com/photo-1540569014015-19a7be504e3a?w=200&h=200&fit=crop&q=80'}" alt="${pro.name}" class="provider-card-avatar">
+            <div class="provider-card-title-block">
+              <div class="provider-card-name-row">
+                <span class="provider-card-name">${pro.name}</span>
+                ${pro.isVerified ? `<span class="badge badge-verified"><i data-lucide="shield-check"></i></span>` : ''}
+              </div>
+              <span class="provider-card-category">${this.getCategoryIcon(pro.category)} ${pro.category}</span>
             </div>
-            <span class="provider-card-category">${this.getCategoryIcon(pro.category)} ${pro.category}</span>
-            
-            <div class="provider-card-rating">
-              <i data-lucide="star" class="star-filled"></i>
-              <span>${pro.rating}</span>
-              <span class="reviews-text">(${pro.reviewsCount} reviews)</span>
-            </div>
-            <p class="provider-card-tagline">${pro.tagline}</p>
-            
-            <div class="provider-card-footer">
-              <span class="provider-card-price"><span class="price-value-bold">$${pro.hourlyRate}</span>/hr</span>
-              <button class="btn btn-primary btn-small" onclick="app.viewProviderDetail('${pro.id}')">View Profile</button>
-            </div>
+          </div>
+          
+          <div class="provider-card-rating">
+            <i data-lucide="star" class="star-filled"></i>
+            <span>${pro.rating}</span>
+            <span class="reviews-text">(${pro.reviewsCount} reviews)</span>
+          </div>
+          <p class="provider-card-tagline">${pro.tagline}</p>
+          
+          <div class="provider-card-footer">
+            <span class="provider-card-price"><span class="price-value-bold">$${pro.hourlyRate}</span>/hr</span>
+            <button class="btn btn-primary btn-small" onclick="app.viewProviderDetail('${pro.id}')">View Profile</button>
           </div>
         </div>
       </div>
@@ -603,8 +612,15 @@ class ServifyApp {
   }
 
   getCategoryIcon(catId) {
-    const found = this.state.categories.find(c => c.id === catId);
-    return found ? found.icon : '🛠️';
+    const iconMap = {
+      electrician: 'plug',
+      carpenter: 'wrench',
+      painter: 'brush',
+      wallpaper: 'layers',
+      plumber: 'droplets'
+    };
+    const name = iconMap[catId.toLowerCase()] || 'wrench';
+    return `<i data-lucide="${name}" class="cat-svg-icon"></i>`;
   }
 
   // --- SEARCH & FILTERS (EXPLORE) ---
@@ -620,8 +636,7 @@ class ServifyApp {
   }
 
   bindSearchAndFilters() {
-    const landingInput = document.getElementById('landing-search-input');
-    const landingBtn = document.getElementById('landing-search-btn');
+    const headerInput = document.getElementById('header-search-input');
     const exploreInput = document.getElementById('explore-search-input');
     
     const filterCat = document.getElementById('filter-category');
@@ -631,18 +646,25 @@ class ServifyApp {
     const clearFiltersBtn = document.getElementById('clear-filters-btn');
     const sortSelect = document.getElementById('sort-select');
 
-    // Hero search
-    if (landingBtn && landingInput) {
-      landingBtn.addEventListener('click', () => {
-        this.state.activeSearchQuery = landingInput.value.trim();
-        exploreInput.value = this.state.activeSearchQuery;
-        this.navigate('explore-view');
-      });
-      landingInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-          this.state.activeSearchQuery = landingInput.value.trim();
-          exploreInput.value = this.state.activeSearchQuery;
+    // Header search bar listener (Dynamic redirect and sync to explore search)
+    if (headerInput) {
+      const handleHeaderSearch = () => {
+        const query = headerInput.value.trim();
+        this.state.activeSearchQuery = query;
+        if (exploreInput) exploreInput.value = query;
+        
+        // If not already on explore, navigate there immediately
+        if (this.state.currentView !== 'explore-view') {
           this.navigate('explore-view');
+        } else {
+          this.updateExploreResults();
+        }
+      };
+
+      headerInput.addEventListener('input', handleHeaderSearch);
+      headerInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          handleHeaderSearch();
         }
       });
     }
@@ -650,7 +672,12 @@ class ServifyApp {
     // Live explore search
     if (exploreInput) {
       exploreInput.addEventListener('input', (e) => {
-        this.state.activeSearchQuery = e.target.value.trim();
+        const query = e.target.value.trim();
+        this.state.activeSearchQuery = query;
+        
+        // Sync back to header search
+        if (headerInput) headerInput.value = query;
+        
         this.updateExploreResults();
       });
     }
@@ -701,6 +728,7 @@ class ServifyApp {
         this.state.activeSearchQuery = '';
         
         // Reset inputs values
+        if (headerInput) headerInput.value = '';
         if (exploreInput) exploreInput.value = '';
         if (filterCat) filterCat.value = 'all';
         if (filterPrice) {
@@ -869,6 +897,22 @@ class ServifyApp {
       return;
     }
 
+    // Login/Register Gate for Inspection Booking
+    if (!this.state.currentUser) {
+      this.state.pendingBookingDetails = {
+        isInspection: true,
+        providerId: proId,
+        date: dateVal,
+        time: timeVal,
+        address: address,
+        desc: desc
+      };
+      this.closeCategoryModal();
+      this.showToast('Please sign in or register to complete your inspection request.');
+      this.navigate('auth-view');
+      return;
+    }
+
     try {
       const response = await fetch(`${API_BASE_URL}/bookings`, {
         method: 'POST',
@@ -941,8 +985,8 @@ class ServifyApp {
 
     // Perform filter
     let results = this.state.providers.filter(pro => {
-      // 0. Society filter
-      if (this.state.selectedSociety !== 'all' && this.state.selectedSociety !== '') {
+      // 0. Society filter (Guests see all, customers see their specific society matches)
+      if (this.state.currentUser && this.state.currentUser.role === 'customer' && this.state.selectedSociety !== 'all' && this.state.selectedSociety !== '') {
         if (!pro.societies || !pro.societies.includes(this.state.selectedSociety)) {
           return false;
         }
@@ -969,14 +1013,15 @@ class ServifyApp {
         return false;
       }
 
-      // 5. Search query filter (matches name, tagline, skills, or offered services)
+      // 5. Search query filter (matches name, category, tagline, skills, or offered services)
       if (this.state.activeSearchQuery) {
         const query = this.state.activeSearchQuery.toLowerCase();
         const matchesName = pro.name.toLowerCase().includes(query);
+        const matchesCategory = pro.category.toLowerCase().includes(query);
         const matchesTagline = pro.tagline.toLowerCase().includes(query);
         const matchesSkills = pro.skills.some(skill => skill.toLowerCase().includes(query));
         const matchesServices = pro.pricingList && pro.pricingList.some(srv => srv.name.toLowerCase().includes(query));
-        if (!matchesName && !matchesTagline && !matchesSkills && !matchesServices) return false;
+        if (!matchesName && !matchesCategory && !matchesTagline && !matchesSkills && !matchesServices) return false;
       }
 
       return true;
@@ -1266,7 +1311,8 @@ class ServifyApp {
 
       const bookingDate = document.getElementById('booking-date').value;
       const bookingTime = document.getElementById('booking-time').value;
-      const totalPrice = subtotal;
+      const serviceFee = 5.00;
+      const totalPrice = subtotal + serviceFee;
 
       // Platform commission split (Direct/No markup)
       const platformCommission = 0;
@@ -1369,6 +1415,7 @@ class ServifyApp {
   updateAuthHeaders() {
     const userBadge = document.getElementById('header-user-badge');
     const loginBtn = document.getElementById('header-login-btn');
+    const registerBtn = document.getElementById('header-register-btn');
     const avatarImg = document.getElementById('header-avatar');
     const usernameSpan = document.getElementById('header-username');
     
@@ -1388,6 +1435,7 @@ class ServifyApp {
       
       if (userBadge) userBadge.classList.remove('hidden');
       if (loginBtn) loginBtn.classList.add('hidden');
+      if (registerBtn) registerBtn.classList.add('hidden');
 
       // Adjust dynamic headers based on role
       if (u.role === 'customer') {
@@ -1417,6 +1465,7 @@ class ServifyApp {
       // Guest state
       if (userBadge) userBadge.classList.add('hidden');
       if (loginBtn) loginBtn.classList.remove('hidden');
+      if (registerBtn) registerBtn.classList.remove('hidden');
       if (bookingsNav) bookingsNav.classList.add('hidden');
       if (providerNav) providerNav.classList.add('hidden');
       if (headerSocietyWrapper) headerSocietyWrapper.classList.add('hidden');
@@ -1733,6 +1782,59 @@ class ServifyApp {
     }
 
     let newBooking;
+
+    if (details.isInspection) {
+      try {
+        const response = await fetch(`${API_BASE_URL}/bookings`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            providerId: details.providerId,
+            date: details.date,
+            time: details.time,
+            clientName: this.state.currentUser.name,
+            clientAddress: details.address,
+            clientDescription: details.desc
+          })
+        });
+
+        if (!response.ok) {
+          const err = await response.json();
+          throw new Error(err.error || 'Failed to submit inspection request.');
+        }
+
+        newBooking = await response.json();
+      } catch (err) {
+        console.warn('API error, falling back to local simulation request creation:', err);
+        newBooking = {
+          id: 'b_' + Date.now(),
+          providerId: details.providerId,
+          providerName: selectedPro.name,
+          providerCategory: selectedPro.category,
+          providerAvatar: selectedPro.avatar,
+          date: details.date,
+          time: details.time,
+          servicesSelected: [{ name: 'Home Site Inspection', price: 0 }],
+          subtotalPrice: 0,
+          serviceFee: 5.00,
+          platformCommission: 0,
+          workerPayout: 0,
+          totalPrice: 5.00,
+          status: 'pending',
+          chatHistory: [
+            { sender: 'provider', text: `Hi ${this.state.currentUser.name}! I received your inspection request for ${details.date} at ${details.time}. I will review the task details at ${details.address} and call you!`, time: 'Just now' }
+          ]
+        };
+      }
+
+      this.state.bookings.unshift(newBooking);
+      this.saveState();
+      this.state.pendingBookingDetails = null;
+      this.showToast(`Inspection request sent to ${selectedPro.name}!`);
+      this.navigate('user-dashboard-view');
+      this.renderProviderDashboard();
+      return;
+    }
 
     try {
       const response = await fetch(`${API_BASE_URL}/bookings`, {

@@ -45,7 +45,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   
   <!-- CSS Stylesheet -->
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=4">
   
   <!-- Lucide Icons CDN -->
   <script src="https://unpkg.com/lucide@latest"></script>
@@ -56,9 +56,27 @@
   <header class="app-header">
     <div class="container header-container">
       <a href="#" class="logo" id="nav-logo">
-        <span class="logo-icon">⚡</span>
+        <i data-lucide="zap" class="logo-vector-icon"></i>
         <span class="logo-text">Servify</span>
       </a>
+
+      <!-- Category & Search Section -->
+      <div class="header-search-wrapper">
+        <div class="header-category-dropdown">
+          <select id="header-category-select" class="header-select-dropdown" onchange="if(this.value !== 'default') { app.quickSearch(this.value); this.value = 'default'; }">
+            <option value="default" disabled selected>Services</option>
+            <option value="electrician">Electrician</option>
+            <option value="painter">Painter</option>
+            <option value="carpenter">Carpenter</option>
+            <option value="wallpaper">Wallpaper Specialist</option>
+            <option value="plumber">Plumber</option>
+          </select>
+        </div>
+        <div class="header-search-bar">
+          <i data-lucide="search" class="header-search-icon"></i>
+          <input type="text" id="header-search-input" placeholder="Search services (e.g. electrician...)">
+        </div>
+      </div>
       
       <nav class="main-nav">
         <a href="#" class="nav-link active" data-target="landing-view">Home</a>
@@ -84,7 +102,8 @@
         </button>
         <!-- Quick Profile Badge / Login trigger -->
         <div id="header-auth-actions" class="header-auth-flex">
-          <button id="header-login-btn" class="btn btn-primary btn-small" onclick="app.navigate('auth-view')">Sign In</button>
+          <button id="header-login-btn" class="btn btn-secondary btn-small" onclick="app.navigate('auth-view')">Sign In</button>
+          <button id="header-register-btn" class="btn btn-primary btn-small" onclick="app.navigate('auth-view'); setTimeout(() => app.switchAuthTab('register'), 100);">Sign Up</button>
           <div id="header-user-badge" class="user-profile-badge hidden">
             <img id="header-avatar" src="" alt="User Avatar" class="small-avatar">
             <span id="header-username" class="profile-name"></span>
@@ -122,15 +141,7 @@
           <h1 class="hero-title">Expert Home Services,<br><span class="gradient-text">On Demand.</span></h1>
           <p class="hero-subtitle">Book top-rated, background-checked electricians, carpenters, painters, and wallpaper specialists in minutes.</p>
           
-          <!-- Search Bar -->
-          <div class="search-container-box">
-            <div class="search-input-wrapper">
-              <i data-lucide="search" class="search-icon"></i>
-              <input type="text" id="landing-search-input" placeholder="What service do you need today? (e.g. electrical wiring, painting...)">
-            </div>
-            <button class="btn btn-primary" id="landing-search-btn">Find Pros</button>
-          </div>
-          
+
           <!-- Hero Tags -->
           <div class="hero-tags">
             <span>Popular:</span>
@@ -185,38 +196,66 @@
         </div>
       </div>
 
-      <!-- How it Works -->
+      <!-- How a Customer Got Served -->
       <div class="section-container container">
-        <h2 class="section-title text-center">How Servify Works</h2>
+        <h2 class="section-title text-center">How Customers Get Served</h2>
+        <p class="section-subtitle text-center" style="max-width: 600px; margin: 0.5rem auto 3rem auto;">A seamless, reliable 4-step journey designed for perfect home service delivery</p>
         <div class="steps-grid">
           <div class="step-card">
             <div class="step-icon-wrapper"><i data-lucide="search" class="step-icon"></i></div>
-            <h3>1. Search & Filter</h3>
-            <p>Browse our list of local service providers and filter by service, price, ratings, or skills.</p>
+            <h3>1. Select a Verified Pro</h3>
+            <p>Compare vetted electricians, painters, carpenters, and plumbers in your area based on real reviews.</p>
           </div>
           <div class="step-card">
-            <div class="step-icon-wrapper"><i data-lucide="calendar" class="step-icon"></i></div>
-            <h3>2. Book Instantly</h3>
-            <p>Customize your services checklist, pick a convenient date & time, and book with transparent pricing.</p>
+            <div class="step-icon-wrapper"><i data-lucide="phone" class="step-icon"></i></div>
+            <h3>2. Direct Discussion</h3>
+            <p>Connect instantly on the phone to explain your home task and align on custom agreed pricing.</p>
           </div>
           <div class="step-card">
-            <div class="step-icon-wrapper"><i data-lucide="message-square" class="step-icon"></i></div>
-            <h3>3. Chat & Complete</h3>
-            <p>Discuss job details via direct chat, get the work done, and mark complete safely on the app.</p>
+            <div class="step-icon-wrapper"><i data-lucide="shield-alert" class="step-icon"></i></div>
+            <h3>3. Job Execution</h3>
+            <p>Our background-checked professionals perform the job with high quality, speed, and clean standards.</p>
+          </div>
+          <div class="step-card">
+            <div class="step-icon-wrapper"><i data-lucide="shield-check" class="step-icon"></i></div>
+            <h3>4. Secure Payout</h3>
+            <p>Confirm the job completion on the app and complete your digital checkout with 100% guarantee.</p>
           </div>
         </div>
       </div>
 
-      <!-- Provider CTA Banner -->
+      <!-- Partner Earnings Banner -->
       <div class="container CTA-banner-wrapper">
         <div class="cta-banner">
           <div class="cta-content">
-            <h2>Are you a service provider?</h2>
-            <p>Grow your business, manage scheduling, set custom service lists, and reach hundreds of local customers with Servify.</p>
-            <button class="btn btn-white" onclick="app.navigate('provider-dashboard-view')">Join as Partner</button>
+            <span class="cta-badge">Join as Partner</span>
+            <h2>Earn on Your Own Schedule</h2>
+            <p>Set your custom service prices, keep **85%** of every single booking payout, and access hundreds of nearby society leads instantly.</p>
+            
+            <div class="earnings-showcase-row mt-4 mb-4">
+              <div class="earning-item">
+                <span class="earning-role">Electricians</span>
+                <span class="earning-val">$1,200 - $1,800/wk</span>
+              </div>
+              <div class="earning-item">
+                <span class="earning-role">Painters</span>
+                <span class="earning-val">$1,500 - $2,200/wk</span>
+              </div>
+              <div class="earning-item">
+                <span class="earning-role">Carpenters</span>
+                <span class="earning-val">$1,600 - $2,400/wk</span>
+              </div>
+            </div>
+
+            <button class="btn btn-white" onclick="app.navigate('provider-dashboard-view')">Register as Service Partner</button>
           </div>
-          <div class="cta-image-mock">
-            <i data-lucide="shield-check" class="shield-cta-icon"></i>
+          <div class="cta-earnings-mock">
+            <div class="earnings-card-glow"></div>
+            <div class="earnings-card-inner">
+              <span class="earnings-lbl">Servify Commission</span>
+              <span class="earnings-pct">ONLY 15%</span>
+              <p class="earnings-desc">No hidden monthly fees or lead subscription traps. Keep more of what you earn.</p>
+            </div>
           </div>
         </div>
       </div>
@@ -844,33 +883,11 @@
 
   <!-- Premium Footer -->
   <footer class="app-footer">
-    <div class="container footer-grid">
-      <div class="footer-brand">
-        <a href="#" class="logo">
-          <span class="logo-icon">⚡</span>
-          <span class="logo-text">Servify</span>
-        </a>
-        <p class="brand-desc mt-2">Connecting homeowners with reliable local professionals for plumbing, electrical, carpentering, wallpapering, and painting needs.</p>
-      </div>
-      <div>
-        <h4>Quick Links</h4>
-        <ul class="footer-links">
-          <li><a href="#" onclick="app.navigate('explore-view')">Explore Pros</a></li>
-          <li><a href="#" onclick="app.navigate('landing-view')">Home Services</a></li>
-          <li><a href="#" onclick="app.navigate('user-dashboard-view')">My Bookings</a></li>
-        </ul>
-      </div>
-      <div>
-        <h4>Safety & Trust</h4>
-        <ul class="footer-links">
-          <li><a href="#">Background Checks</a></li>
-          <li><a href="#">Servify Guarantee</a></li>
-          <li><a href="#">Help & Support</a></li>
-        </ul>
-      </div>
-    </div>
-    <div class="footer-bottom text-center container">
-      <p>&copy; 2026 Servify Inc. Made with ❤️ for verified local service providers.</p>
+    <div class="container footer-contact-row">
+      <span class="footer-contact-item"><i data-lucide="phone" class="footer-icon"></i> <strong>Call Us:</strong> +91 98765 43210</span>
+      <span class="footer-contact-item"><i data-lucide="mail" class="footer-icon"></i> <strong>Email:</strong> support@servify.com</span>
+      <span class="footer-contact-item"><i data-lucide="map-pin" class="footer-icon"></i> <strong>Support:</strong> Gokuldham Society Area, Delhi NCR</span>
+      <span class="footer-copyright">&copy; 2026 Servify Inc.</span>
     </div>
   </footer>
 
@@ -1074,9 +1091,9 @@
   </div>
 
   <!-- App JavaScript files -->
-  <script src="data.js"></script>
-  <script src="app.js"></script>
-  <script src="customer.js"></script>
-  <script src="provider.js"></script>
+  <script src="data.js?v=4"></script>
+  <script src="app.js?v=4"></script>
+  <script src="customer.js?v=4"></script>
+  <script src="provider.js?v=4"></script>
 </body>
 </html>

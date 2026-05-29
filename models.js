@@ -56,7 +56,7 @@ const ProviderSchema = new mongoose.Schema({
 
 const BookingSchema = new mongoose.Schema({
   id: { type: String, required: true, unique: true },
-  customerId: { type: String, required: true },
+  customerId: String,
   providerId: { type: String, required: true },
   date: String,
   time: String,
