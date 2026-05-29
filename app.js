@@ -392,7 +392,7 @@ class ServifyApp {
     });
   }
 
-  navigate(viewId) {
+  async navigate(viewId) {
     // Auth Gates & Role Authorization Filter
     if (viewId === 'user-dashboard-view') {
       if (!this.state.currentUser) {
@@ -410,6 +410,10 @@ class ServifyApp {
         this.showToast('Redirected: Partner Portal is restricted to Service Providers.');
         viewId = 'explore-view';
       }
+    }
+
+    if (viewId === 'user-dashboard-view' || viewId === 'provider-dashboard-view' || viewId === 'explore-view') {
+      await this.loadDynamicData();
     }
 
     this.state.currentView = viewId;

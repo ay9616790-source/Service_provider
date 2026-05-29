@@ -699,8 +699,9 @@
                 <input type="text" id="edit-pro-tagline" class="form-input-small" style="width: 100%;" required>
               </div>
               <div class="form-group" style="margin-bottom: 1rem;">
-                <label for="edit-pro-avatar" class="input-label-small" style="font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 0.25rem;">Profile Photo URL <span style="color: #ef4444; font-weight: bold;">*</span></label>
-                <input type="text" id="edit-pro-avatar" class="form-input-small" style="width: 100%;" required>
+                <label for="edit-pro-avatar" class="input-label-small" style="font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 0.25rem;">Profile Photo (Upload from device)</label>
+                <input type="file" id="edit-pro-avatar" accept="image/*" class="form-input-small" style="width: 100%;">
+                <img id="edit-pro-photo-preview" src="" style="display:none; max-width: 100px; max-height: 100px; margin-top: 10px; border-radius: 8px; object-fit: cover;">
               </div>
               <div class="form-group" style="margin-bottom: 1rem;">
                 <label for="edit-pro-experience" class="input-label-small" style="font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 0.25rem;">Years of Experience <span style="color: #ef4444; font-weight: bold;">*</span></label>

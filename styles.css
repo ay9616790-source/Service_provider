@@ -568,6 +568,8 @@ a:hover {
   top: -2.5rem;
   left: 1.5rem;
   object-fit: cover;
+  background-color: var(--bg-offset);
+  color: transparent;
 }
 .provider-card-info {
   margin-top: 2.5rem;
@@ -876,6 +878,8 @@ a:hover {
   height: 5.5rem;
   border-radius: 0.75rem;
   object-fit: cover;
+  background-color: var(--bg-offset);
+  color: transparent;
 }
 .list-card-content {
   flex-grow: 1;
@@ -1057,6 +1061,8 @@ a:hover {
   object-fit: cover;
   box-shadow: var(--card-shadow);
   z-index: 3;
+  background-color: var(--bg-offset);
+  color: transparent;
 }
 .profile-heading-details {
   padding-top: 3.5rem;

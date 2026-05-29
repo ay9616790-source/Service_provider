@@ -34,6 +34,12 @@ class ProviderExtension {
       if (taglineInput && document.activeElement !== taglineInput) taglineInput.value = activeProvider.tagline || '';
       if (bioInput && document.activeElement !== bioInput) bioInput.value = activeProvider.bio || '';
 
+      const avatarPreview = document.getElementById('edit-pro-photo-preview');
+      if (avatarPreview && activeProvider.avatar) {
+        avatarPreview.src = activeProvider.avatar;
+        avatarPreview.style.display = 'block';
+      }
+
       // Onboarding Modal Check
       const onboardingModal = document.getElementById('provider-onboarding-modal');
       const providerGrid = document.querySelector('.provider-grid');
@@ -426,6 +432,36 @@ class ProviderExtension {
       }
     });
 
+    const editPhotoInput = document.getElementById('edit-pro-avatar');
+    const editPhotoPreview = document.getElementById('edit-pro-photo-preview');
+    if (editPhotoInput && editPhotoPreview) {
+      editPhotoInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const MAX_WIDTH = 400;
+            let scaleSize = 1;
+            if (img.width > MAX_WIDTH) {
+                scaleSize = MAX_WIDTH / img.width;
+            }
+            canvas.width = img.width * scaleSize;
+            canvas.height = img.height * scaleSize;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            const compressedBase64 = canvas.toDataURL('image/jpeg', 0.8);
+            editPhotoPreview.src = compressedBase64;
+            editPhotoPreview.style.display = 'block';
+          };
+          img.src = event.target.result;
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
     // Bind profile update form submission
     const profileForm = document.getElementById('provider-profile-form');
     if (profileForm) {
@@ -436,6 +472,11 @@ class ProviderExtension {
         const phoneVal = document.getElementById('edit-pro-phone').value.trim();
         const taglineVal = document.getElementById('edit-pro-tagline').value.trim();
         const bioVal = document.getElementById('edit-pro-bio').value.trim();
+        const editPhotoPreview = document.getElementById('edit-pro-photo-preview');
+        let avatarVal = null;
+        if (editPhotoPreview && editPhotoPreview.src && editPhotoPreview.style.display !== 'none') {
+            avatarVal = editPhotoPreview.src;
+        }
 
         if (!nameVal || !phoneVal || !taglineVal || !bioVal) {
           this.showToast('Please fill in all profile fields.');
@@ -451,11 +492,13 @@ class ProviderExtension {
           activePro.phone = phoneVal;
           activePro.tagline = taglineVal;
           activePro.bio = bioVal;
+          if (avatarVal) activePro.avatar = avatarVal;
 
           // Sync with customer bookings locally
           this.state.bookings.forEach(b => {
             if (b.providerId === providerId) {
               b.providerName = nameVal;
+              if (avatarVal) b.providerAvatar = avatarVal;
             }
           });
 
@@ -471,7 +514,8 @@ class ProviderExtension {
               name: nameVal,
               phone: phoneVal,
               tagline: taglineVal,
-              bio: bioVal
+              bio: bioVal,
+              ...(avatarVal && { avatar: avatarVal })
             })
           });
 
