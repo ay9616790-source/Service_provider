@@ -30,7 +30,7 @@
       <nav class="main-nav">
         <a href="#" class="nav-link active" data-target="landing-view">Home</a>
         <a href="#" class="nav-link" data-target="explore-view">Explore Pros</a>
-        <a href="#" class="nav-link" data-target="user-dashboard-view" id="nav-bookings">My Bookings</a>
+        <a href="#" class="nav-link" data-target="user-dashboard-view" id="nav-bookings">Client Dashboard</a>
         <a href="#" class="nav-link" data-target="provider-dashboard-view" id="nav-provider-portal">Provider Portal</a>
       </nav>
 
@@ -49,10 +49,16 @@
           <i data-lucide="sun" class="sun-icon"></i>
           <i data-lucide="moon" class="moon-icon"></i>
         </button>
-        <!-- Quick Profile -->
-        <div class="user-profile-badge">
-          <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&h=80&fit=crop&q=80" alt="User Avatar" class="small-avatar">
-          <span class="profile-name">Abhishek K.</span>
+        <!-- Quick Profile Badge / Login trigger -->
+        <div id="header-auth-actions" class="header-auth-flex">
+          <button id="header-login-btn" class="btn btn-primary btn-small" onclick="app.navigate('auth-view')">Sign In</button>
+          <div id="header-user-badge" class="user-profile-badge hidden">
+            <img id="header-avatar" src="" alt="User Avatar" class="small-avatar">
+            <span id="header-username" class="profile-name"></span>
+            <button id="header-logout-btn" class="btn-logout-small" title="Logout" onclick="app.logout()">
+              <i data-lucide="log-out"></i>
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -168,19 +174,6 @@
         </div>
       </div>
 
-      <!-- Provider CTA Banner -->
-      <div class="container CTA-banner-wrapper">
-        <div class="cta-banner">
-          <div class="cta-content">
-            <h2>Are you a service provider?</h2>
-            <p>Grow your business, manage scheduling, set custom service lists, and reach hundreds of local customers with Servify.</p>
-            <button class="btn btn-white" onclick="app.navigate('provider-dashboard-view')">Join as Partner</button>
-          </div>
-          <div class="cta-image-mock">
-            <i data-lucide="shield-check" class="shield-cta-icon"></i>
-          </div>
-        </div>
-      </div>
     </section>
 
     <!-- 2. EXPLORE VIEW -->
@@ -214,8 +207,8 @@
           
           <!-- Pricing Range Filter -->
           <div class="filter-group">
-            <label class="filter-label">Hourly Rate Limit ($)</label>
-            <div class="range-display">Up to $<span id="range-value">100</span></div>
+            <label class="filter-label">Hourly Rate Limit (₹)</label>
+            <div class="range-display">Up to ₹<span id="range-value">100</span></div>
             <input type="range" id="filter-price" min="30" max="100" value="100" class="range-slider">
           </div>
 
@@ -316,7 +309,7 @@
                   <div class="profile-stats-row">
                     <span class="stat-item"><i data-lucide="star" class="star-filled"></i> <strong id="detail-rating">4.9</strong> (<span id="detail-reviews-count">142</span> reviews)</span>
                     <span class="stat-item"><i data-lucide="briefcase"></i> <span id="detail-experience">8</span> years exp</span>
-                    <span class="stat-item"><i data-lucide="dollar-sign"></i> <span id="detail-hourly">45</span>/hr starting</span>
+                    <span class="stat-item"><i data-lucide="indian-rupee"></i> <span id="detail-hourly">45</span>/hr starting</span>
                   </div>
                   <div class="profile-call-box mt-3">
                     <a href="tel:" id="detail-phone-link" class="btn btn-primary btn-call-now">
@@ -383,7 +376,7 @@
                 </div>
 
                 <div id="booking-custom-pricing-panel" class="mt-4">
-                  <label for="booking-custom-rate" class="step-section-title">1. Enter Agreed Price ($)</label>
+                  <label for="booking-custom-rate" class="step-section-title">1. Enter Agreed Price (₹)</label>
                   <input type="number" id="booking-custom-rate" class="form-input-small mt-2" placeholder="Amount discussed on phone" min="1">
                   <span class="call-hint-text mt-2">Process payments on Servify for warranty protection.</span>
                 </div>
@@ -419,16 +412,16 @@
               <div class="pricing-summary-card">
                 <div class="price-calc-row">
                   <span>Selected Services Subtotal:</span>
-                  <span>$<span id="booking-subtotal">0</span></span>
+                  <span>₹<span id="booking-subtotal">0</span></span>
                 </div>
                 <div class="price-calc-row">
                   <span>Service Fee:</span>
-                  <span>$5.00</span>
+                  <span>₹5.00</span>
                 </div>
                 <hr class="price-divider">
                 <div class="price-calc-row total-row">
                   <span>Estimated Total:</span>
-                  <span>$<span id="booking-total-price">5.00</span></span>
+                  <span>₹<span id="booking-total-price">5.00</span></span>
                 </div>
               </div>
 
@@ -447,15 +440,26 @@
     <!-- 4. USER DASHBOARD VIEW (MY BOOKINGS & CHAT) -->
     <section id="user-dashboard-view" class="view-panel">
       <div class="container dashboard-wrapper">
-        <h1 class="view-title">My Customer Dashboard</h1>
-        
+        <h1 class="view-title">Welcome, <span class="gradient-text" id="client-dashboard-name">Customer</span>!</h1>
+        <p class="section-subtitle mb-4">What service do you need today?</p>
         <div class="dashboard-tabs">
-          <button class="tab-btn active" data-tab="bookings-tab">My Bookings</button>
+          <button class="tab-btn active" data-tab="client-explore-tab">Explore Services</button>
+          <button class="tab-btn" data-tab="bookings-tab">My Bookings</button>
           <button class="tab-btn" data-tab="chat-tab" id="user-chat-tab-trigger">Direct Messages <span class="badge badge-pulse" id="unread-dot"></span></button>
         </div>
 
+        <!-- TAB CONTENT: EXPLORE SERVICES -->
+        <div id="client-explore-tab" class="dashboard-tab-content active">
+          <div class="section-container mt-2">
+            <h2 class="section-title">Explore by Category</h2>
+            <div class="categories-grid" id="client-categories-list">
+              <!-- Dynamically populated same as home page -->
+            </div>
+          </div>
+        </div>
+
         <!-- TAB CONTENT: MY BOOKINGS -->
-        <div id="bookings-tab" class="dashboard-tab-content active">
+        <div id="bookings-tab" class="dashboard-tab-content">
           <div class="bookings-grid-list" id="user-bookings-container">
             <!-- Dynamically populated bookings list -->
           </div>
@@ -505,6 +509,60 @@
           </div>
         </div>
 
+        <!-- Onboarding Modal Overlay -->
+        <div id="provider-onboarding-modal" class="modal hidden" style="z-index: 1000; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; position: fixed; inset: 0;">
+          <div class="modal-content" style="max-height: 90vh; overflow-y: auto; max-width: 600px; width: 90%;">
+            <div class="modal-header">
+              <h3>Complete Your Profile</h3>
+            </div>
+            <div class="modal-body">
+              <p class="modal-subtitle">Welcome! Please fill in all required details to start accepting jobs.</p>
+              <form id="onboarding-profile-form" class="mt-4">
+                <div class="form-group" style="margin-bottom: 1rem;">
+                  <label class="input-label-small" style="font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 0.25rem;">Full Name</label>
+                  <input type="text" id="ob-pro-name" class="form-input-small" style="width: 100%;" required>
+                </div>
+                <div class="form-group" style="margin-bottom: 1rem;">
+                  <label class="input-label-small" style="font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 0.25rem;">Phone Number</label>
+                  <input type="text" id="ob-pro-phone" class="form-input-small" style="width: 100%;" required>
+                </div>
+                <div class="form-group" style="margin-bottom: 1rem;">
+                  <label class="input-label-small" style="font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 0.25rem;">Email Address</label>
+                  <input type="email" id="ob-pro-email" class="form-input-small" style="width: 100%;" required>
+                </div>
+                <div class="form-group" style="margin-bottom: 1rem;">
+                  <label class="input-label-small" style="font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 0.25rem;">WhatsApp Number</label>
+                  <input type="text" id="ob-pro-whatsapp" class="form-input-small" style="width: 100%;" required>
+                </div>
+                <div class="form-group" style="margin-bottom: 1rem;">
+                  <label class="input-label-small" style="font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 0.25rem;">Service Category</label>
+                  <select id="ob-pro-category" class="form-input-small" style="width: 100%;" required>
+                    <option value="electrician">Electrician</option>
+                    <option value="carpenter">Carpenter</option>
+                    <option value="painter">Painter</option>
+                    <option value="wallpaper">Wallpaper Specialist</option>
+                    <option value="plumber">Plumber</option>
+                  </select>
+                </div>
+                <div class="form-group" style="margin-bottom: 1rem;">
+                  <label class="input-label-small" style="font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 0.25rem;">Address / Location</label>
+                  <input type="text" id="ob-pro-address" class="form-input-small" style="width: 100%;" required>
+                </div>
+                <div class="form-group" style="margin-bottom: 1rem;">
+                  <label class="input-label-small" style="font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 0.25rem;">Profile Photo (Upload from device)</label>
+                  <input type="file" id="ob-pro-photo" accept="image/*" class="form-input-small" style="width: 100%;">
+                  <img id="ob-pro-photo-preview" src="" style="display:none; max-width: 100px; max-height: 100px; margin-top: 10px; border-radius: 8px; object-fit: cover;">
+                </div>
+                <div class="form-group" style="margin-bottom: 1rem;">
+                  <label class="input-label-small" style="font-size: 0.8rem; font-weight: 600; display: block; margin-bottom: 0.25rem;">Biography / Tagline</label>
+                  <textarea id="ob-pro-bio" class="form-input-small" style="width: 100%; height: 5rem; resize: vertical;" required></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary btn-full mt-2">Save Profile Details</button>
+              </form>
+            </div>
+          </div>
+        </div>
+
         <!-- Grid layout: Earnings, job approvals, schedules -->
         <div class="provider-grid">
           
@@ -522,15 +580,15 @@
             <div class="earnings-hero-row">
               <div class="earnings-stat">
                 <span class="lbl">Net Take-Home Payout (85%)</span>
-                <span class="val" id="provider-net-payout">$1,207.00</span>
+                <span class="val" id="provider-net-payout">₹1,207.00</span>
               </div>
               <div class="earnings-stat">
                 <span class="lbl">Gross Revenue</span>
-                <span class="val" id="provider-gross-billings">$1,420.00</span>
+                <span class="val" id="provider-gross-billings">₹1,420.00</span>
               </div>
               <div class="earnings-stat">
                 <span class="lbl">Servify Commission (15%)</span>
-                <span class="val" id="provider-commission-deducted">$213.00</span>
+                <span class="val" id="provider-commission-deducted">₹213.00</span>
               </div>
               <div class="earnings-stat">
                 <span class="lbl">Jobs Completed</span>
@@ -605,6 +663,122 @@
       </div>
     </section>
 
+    <!-- 6. AUTHENTICATION VIEW (LOGIN & REGISTER) -->
+    <section id="auth-view" class="view-panel">
+      <div class="auth-container">
+        <div class="auth-blur-circle auth-blur-1"></div>
+        <div class="auth-blur-circle auth-blur-2"></div>
+        
+        <div class="auth-card">
+          <div class="auth-header-logo">
+            <span class="logo-icon">⚡</span>
+            <span class="logo-text">Servify</span>
+          </div>
+          
+          <h2 id="auth-title" class="auth-main-title">Welcome Back</h2>
+          <p id="auth-subtitle" class="auth-sub-title">Sign in to book pros and manage your schedules</p>
+          
+          <!-- Slide Toggle Tab -->
+          <div class="auth-tab-switch">
+            <div class="auth-tab-bg"></div>
+            <button type="button" class="auth-tab-btn active" id="tab-login" onclick="app.switchAuthTab('login')">Sign In</button>
+            <button type="button" class="auth-tab-btn" id="tab-register" onclick="app.switchAuthTab('register')">New Account</button>
+          </div>
+          
+          <!-- Auth Form -->
+          <form id="auth-form" class="auth-form-inputs">
+            <!-- Alert message area -->
+            <div id="auth-error-alert" class="alert-box error hidden">
+              <i data-lucide="alert-circle"></i>
+              <span id="auth-error-text">Incorrect password.</span>
+            </div>
+            
+            <!-- REGISTER ONLY: Role Selector Cards -->
+            <div id="register-role-selection-group" class="hidden">
+              <label class="input-label-small text-center mb-2 block">I want to join Servify as a:</label>
+              <div class="role-cards-row">
+                <label class="role-card active" id="role-card-customer">
+                  <input type="radio" name="auth-role" value="customer" checked onclick="app.toggleRegisterRoleFields('customer')">
+                  <div class="role-card-inner">
+                    <i data-lucide="user" class="role-icon"></i>
+                    <span class="role-title">Customer</span>
+                    <span class="role-desc">Hire local experts</span>
+                  </div>
+                </label>
+                
+                <label class="role-card" id="role-card-provider">
+                  <input type="radio" name="auth-role" value="provider" onclick="app.toggleRegisterRoleFields('provider')">
+                  <div class="role-card-inner">
+                    <i data-lucide="shield-check" class="role-icon"></i>
+                    <span class="role-title">Partner</span>
+                    <span class="role-desc">Offer services & earn</span>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <!-- REGISTER ONLY: Full Name -->
+            <div class="form-group hidden" id="register-name-group">
+              <label for="auth-name" class="input-label-small">Full Name</label>
+              <div class="input-wrapper">
+                <i data-lucide="user" class="input-icon"></i>
+                <input type="text" id="auth-name" class="form-input-small" placeholder="Enter your full name">
+              </div>
+            </div>
+
+            <!-- Email -->
+            <div class="form-group">
+              <label for="auth-email" class="input-label-small">Email Address</label>
+              <div class="input-wrapper">
+                <i data-lucide="mail" class="input-icon"></i>
+                <input type="email" id="auth-email" class="form-input-small" placeholder="name@example.com" required>
+              </div>
+            </div>
+
+            <!-- Password -->
+            <div class="form-group">
+              <label for="auth-password" class="input-label-small">Password</label>
+              <div class="input-wrapper">
+                <i data-lucide="lock" class="input-icon"></i>
+                <input type="password" id="auth-password" class="form-input-small" placeholder="Enter password" required>
+                <button type="button" class="password-toggle-btn" onclick="app.togglePasswordVisibility()">
+                  <i data-lucide="eye" id="password-eye-icon"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- REGISTER ONLY: Phone Number -->
+            <div class="form-group hidden" id="register-phone-group">
+              <label for="auth-phone" class="input-label-small">Phone Number</label>
+              <div class="input-wrapper">
+                <i data-lucide="phone" class="input-icon"></i>
+                <input type="tel" id="auth-phone" class="form-input-small" placeholder="+91 XXXXX XXXXX">
+              </div>
+            </div>
+
+            <!-- REGISTER CUSTOMER ONLY: Society -->
+            <div class="form-group hidden" id="register-society-group">
+              <label for="auth-society" class="input-label-small">Select Home Society</label>
+              <div class="input-wrapper">
+                <i data-lucide="map-pin" class="input-icon"></i>
+                <select id="auth-society" class="form-input-small">
+                  <option value="gokuldham">Gokuldham Society</option>
+                  <option value="shanti_kunj">Shanti Kunj Heights</option>
+                  <option value="green_valley">Green Valley Apartments</option>
+                  <option value="royal_palms">Royal Palms Residency</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- REGISTER PROVIDER ONLY FIELDS (Removed to simplify registration) -->
+            <button type="submit" id="auth-submit-btn" class="btn btn-primary btn-full mt-4">
+              Sign In
+            </button>
+          </form>
+        </div>
+      </div>
+    </section>
+
   </main>
 
   <!-- Premium Footer -->
@@ -672,5 +846,7 @@
   <!-- App JavaScript files -->
   <script src="data.js"></script>
   <script src="app.js"></script>
+  <script src="customer.js"></script>
+  <script src="provider.js"></script>
 </body>
 </html>
