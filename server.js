@@ -414,10 +414,11 @@ app.post('/api/auth/register', async (req, res) => {
 
     const userId = 'u_' + Date.now();
     let providerId = null;
+    let newProvider = null;
 
     if (role === 'provider') {
       providerId = 'p_' + Date.now();
-      const newProvider = new Provider({
+      newProvider = new Provider({
         id: providerId,
         name: name,
         category: providerCategory || 'electrician',
