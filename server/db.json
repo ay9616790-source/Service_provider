@@ -100,6 +100,18 @@
       "society": "gokuldham",
       "avatar": "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&h=200&fit=crop&q=80",
       "providerId": null
+    },
+    {
+      "id": "5dFe67yuOt0",
+      "email": "customer@servify.com",
+      "password": "password@123",
+      "name": "Anshuman Pandit",
+      "role": "customer",
+      "phone": "+919599878596",
+      "society": "gokuldham",
+      "avatar": "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&h=200&fit=crop&q=80",
+      "providerId": null
     }
-  ]
+  ],
+  "$schema": "./node_modules/json-server/schema.json"
 }

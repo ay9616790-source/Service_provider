@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://localhost:5000/api';
+const API_BASE_URL = `http://${window.location.hostname || 'localhost'}:5000`;
 
 // Servify Core Application State Manager
 class ServifyApp {
@@ -105,12 +105,13 @@ class ServifyApp {
 
     // Load data from Backend API (with offline fallbacks)
     try {
-      const providersRes = await fetch(`${API_BASE_URL}/providers`);
-      const providersData = await providersRes.json();
-      this.state.categories = providersData.categories;
-      this.state.providers = providersData.providers;
-
-      const bookingsRes = await fetch(`${API_BASE_URL}/bookings`);
+      const [categoriesRes, providersRes, bookingsRes] = await Promise.all([
+        fetch(`${API_BASE_URL}/categories`),
+        fetch(`${API_BASE_URL}/providers`),
+        fetch(`${API_BASE_URL}/bookings`)
+      ]);
+      this.state.categories = await categoriesRes.json();
+      this.state.providers = await providersRes.json();
       this.state.bookings = await bookingsRes.json();
     } catch (err) {
       console.warn('Backend API server not accessible, falling back to data.js offline simulation:', err);
@@ -417,7 +418,7 @@ class ServifyApp {
         <h3 class="service-home-title">${srv.name}</h3>
         <div class="service-home-footer">
           <span class="service-home-lbl">Starting from</span>
-          <strong class="service-home-price">$${srv.minPrice}</strong>
+          <strong class="service-home-price">₹${srv.minPrice}</strong>
         </div>
       </div>
     `).join('');
@@ -465,7 +466,7 @@ class ServifyApp {
             <p class="provider-card-tagline">${pro.tagline}</p>
             
             <div class="provider-card-footer">
-              <span class="provider-card-price"><span class="price-value-bold">$${pro.hourlyRate}</span>/hr</span>
+              <span class="provider-card-price"><span class="price-value-bold">₹${pro.hourlyRate}</span>/hr</span>
               <button class="btn btn-primary btn-small" onclick="app.viewProviderDetail('${pro.id}')">View Profile</button>
             </div>
           </div>
@@ -686,7 +687,7 @@ class ServifyApp {
               ${pro.isVerified ? `<span class="badge badge-verified"><i data-lucide="shield-check"></i> Verified</span>` : ''}
             </span>
             <div class="list-card-price-info">
-              <span class="provider-card-price"><span class="price-value-bold">$${pro.hourlyRate}</span>/hr</span>
+              <span class="provider-card-price"><span class="price-value-bold">₹${pro.hourlyRate}</span>/hr</span>
             </div>
           </div>
           <span class="provider-card-category">${this.getCategoryIcon(pro.category)} ${pro.category}</span>
@@ -816,7 +817,7 @@ class ServifyApp {
         <input type="checkbox" name="booking-service-item" value="${srv.id}" data-price="${srv.price}" data-name="${srv.name}">
         <div class="service-check-details">
           <span class="service-check-name">${srv.name}</span>
-          <span class="service-check-price">$${srv.price}</span>
+          <span class="service-check-price">₹${srv.price}</span>
         </div>
       </label>
     `).join('');
@@ -1208,34 +1209,38 @@ class ServifyApp {
 
     if (activeTab === 'login') {
       try {
-        const response = await fetch(`${API_BASE_URL}/auth/login`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password })
-        });
+        // Query json-server /users with matching email + password
+        const response = await fetch(
+          `${API_BASE_URL}/users?email=${encodeURIComponent(email.toLowerCase())}&password=${encodeURIComponent(password)}`
+        );
+        const users = await response.json();
 
-        if (!response.ok) {
-          const err = await response.json();
-          throw new Error(err.error || 'Invalid email or password.');
+        if (!Array.isArray(users) || users.length === 0) {
+          throw new Error('Invalid email or password.');
         }
 
-        const data = await response.json();
-        if (data.success) {
-          this.state.currentUser = data.user;
-          localStorage.setItem('servify_currentUser', JSON.stringify(data.user));
-          this.updateAuthHeaders();
-          this.showToast(`Welcome back, ${data.user.name}!`);
+        const user = users[0];
 
-          // Seamless booking checkout check
-          if (this.state.pendingBookingDetails) {
-            await this.submitPendingBooking();
+        // Fetch provider profile if role is provider
+        if (user.role === 'provider' && user.providerId) {
+          const provRes = await fetch(`${API_BASE_URL}/providers?id=${encodeURIComponent(user.providerId)}`);
+          const provs = await provRes.json();
+          user.providerProfile = provs[0] || null;
+        }
+
+        this.state.currentUser = user;
+        localStorage.setItem('servify_currentUser', JSON.stringify(user));
+        this.updateAuthHeaders();
+        this.showToast(`Welcome back, ${user.name}!`);
+
+        // Seamless booking checkout check
+        if (this.state.pendingBookingDetails) {
+          await this.submitPendingBooking();
+        } else {
+          if (user.role === 'customer') {
+            this.navigate('user-dashboard-view');
           } else {
-            // Navigate based on role
-            if (data.user.role === 'customer') {
-              this.navigate('user-dashboard-view');
-            } else {
-              this.navigate('provider-dashboard-view');
-            }
+            this.navigate('provider-dashboard-view');
           }
         }
       } catch (err) {
@@ -1269,51 +1274,91 @@ class ServifyApp {
       }
 
       try {
-        const response = await fetch(`${API_BASE_URL}/auth/register`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            email,
-            password,
-            name,
-            role,
-            phone,
-            society,
-            providerCategory,
-            providerHourlyRate,
-            providerTagline,
-            providerBio,
-            providerExperience,
-            providerAvatar,
-            providerAddress
-          })
-        });
-
-        if (!response.ok) {
-          const err = await response.json();
-          throw new Error(err.error || 'Failed to register account.');
+        // Check if email already exists
+        const checkRes = await fetch(`${API_BASE_URL}/users?email=${encodeURIComponent(email.toLowerCase())}`);
+        const existing = await checkRes.json();
+        if (existing.length > 0) {
+          throw new Error('Email is already registered.');
         }
 
-        const data = await response.json();
-        if (data.success) {
-          // Dynamic auto-login after register!
-          this.state.currentUser = data.user;
-          localStorage.setItem('servify_currentUser', JSON.stringify(data.user));
-          
-          // Re-fetch dynamic providers so the newly registered provider is in the local state
-          await this.loadDynamicData();
+        const userId = 'u_' + Date.now();
+        let providerId = null;
+        let providerProfile = null;
 
-          this.updateAuthHeaders();
-          this.showToast(`Account created! Welcome to Servify, ${data.user.name}!`);
+        // If registering as provider, create provider record first
+        if (role === 'provider') {
+          providerId = 'p_' + Date.now();
+          const newProvider = {
+            id: providerId,
+            name: name,
+            category: providerCategory || 'electrician',
+            rating: 5.0,
+            reviewsCount: 0,
+            experience: parseInt(providerExperience) || 1,
+            hourlyRate: parseInt(providerHourlyRate) || 40,
+            avatar: providerAvatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&h=200&fit=crop&q=80',
+            banner: 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=800&h=300&fit=crop&q=80',
+            tagline: providerTagline || 'Certified professional',
+            isVerified: false,
+            phone: phone || '',
+            societies: society ? [society] : ['gokuldham'],
+            address: providerAddress || '',
+            bio: providerBio || 'Professional offering quality service.',
+            skills: [providerCategory ? providerCategory.charAt(0).toUpperCase() + providerCategory.slice(1) : 'General'],
+            pricingList: [{ id: 'srv_' + Date.now(), name: 'General Consultation & Repair', price: parseInt(providerHourlyRate) || 40 }],
+            reviews: []
+          };
+          const provRes = await fetch(`${API_BASE_URL}/providers`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(newProvider)
+          });
+          if (!provRes.ok) throw new Error('Failed to create provider profile.');
+          providerProfile = await provRes.json();
+        }
 
-          if (this.state.pendingBookingDetails) {
-            await this.submitPendingBooking();
+        // Create the user record
+        const newUser = {
+          id: userId,
+          email: email.toLowerCase(),
+          password: password,
+          name: name,
+          role: role,
+          phone: phone || '',
+          society: society || 'gokuldham',
+          avatar: role === 'provider'
+            ? 'https://images.unsplash.com/photo-1540569014015-19a7be504e3a?w=200&h=200&fit=crop&q=80'
+            : 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&h=200&fit=crop&q=80',
+          providerId: providerId
+        };
+
+        const userRes = await fetch(`${API_BASE_URL}/users`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(newUser)
+        });
+        if (!userRes.ok) throw new Error('Failed to create user account.');
+
+        const createdUser = await userRes.json();
+        if (providerProfile) createdUser.providerProfile = providerProfile;
+
+        // Auto-login after register
+        this.state.currentUser = createdUser;
+        localStorage.setItem('servify_currentUser', JSON.stringify(createdUser));
+
+        // Re-fetch dynamic providers so the newly registered provider is in local state
+        await this.loadDynamicData();
+
+        this.updateAuthHeaders();
+        this.showToast(`Account created! Welcome to Servify, ${createdUser.name}!`);
+
+        if (this.state.pendingBookingDetails) {
+          await this.submitPendingBooking();
+        } else {
+          if (createdUser.role === 'customer') {
+            this.navigate('user-dashboard-view');
           } else {
-            if (data.user.role === 'customer') {
-              this.navigate('user-dashboard-view');
-            } else {
-              this.navigate('provider-dashboard-view');
-            }
+            this.navigate('provider-dashboard-view');
           }
         }
       } catch (err) {
@@ -1397,11 +1442,11 @@ class ServifyApp {
 
   async loadDynamicData() {
     try {
-      const providersRes = await fetch(`${API_BASE_URL}/providers`);
-      const providersData = await providersRes.json();
-      this.state.providers = providersData.providers;
-      
-      const bookingsRes = await fetch(`${API_BASE_URL}/bookings`);
+      const [providersRes, bookingsRes] = await Promise.all([
+        fetch(`${API_BASE_URL}/providers`),
+        fetch(`${API_BASE_URL}/bookings`)
+      ]);
+      this.state.providers = await providersRes.json();
       this.state.bookings = await bookingsRes.json();
     } catch (err) {
       console.warn('Error reloading dynamic providers/bookings:', err);
