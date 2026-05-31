@@ -699,40 +699,50 @@
     <!-- 6. PROFILE VIEW -->
     <section id="profile-view" class="view-panel">
       <div class="container section-container">
-        <div class="section-header">
-          <button class="btn-icon" onclick="app.navigate(app.state.currentUser?.role === 'customer' ? 'user-dashboard-view' : 'provider-dashboard-view')" style="margin-right: 1rem;">
+        <div class="section-header" style="justify-content: flex-start; gap: 1.5rem; align-items: center;">
+          <button class="btn-icon" onclick="app.navigate(app.state.currentUser?.role === 'customer' ? 'user-dashboard-view' : 'provider-dashboard-view')">
             <i data-lucide="arrow-left"></i>
           </button>
           <div>
-            <h2 class="section-title">My Profile</h2>
+            <h2 class="section-title" style="margin-bottom: 0;">My Profile</h2>
             <p class="section-subtitle">Manage your personal information and settings</p>
           </div>
         </div>
 
-        <div class="provider-card" style="max-width: 600px; margin: 0 auto;">
+        <div class="provider-card" style="max-width: 600px; margin: 0 auto; padding: 3rem 2.5rem; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.08); border: 1px solid rgba(255,255,255,0.5); background: var(--bg-card); border-radius: 20px;">
           <form id="profile-update-form" onsubmit="app.handleProfileUpdate(event)">
-            <div class="form-group" style="text-align: center; margin-bottom: 2rem;">
-              <img id="profile-view-avatar-preview" src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&h=200&fit=crop" class="detail-avatar" style="position: static; border: 4px solid #fff; margin: 0 auto 1rem;" alt="Profile Picture">
-              <input type="text" id="profile-view-avatar" class="form-input" placeholder="Avatar Image URL">
-            </div>
-
-            <div class="form-group">
-              <label for="profile-view-name">Full Name</label>
-              <input type="text" id="profile-view-name" class="form-input" required>
-            </div>
             
-            <div class="form-group">
-              <label for="profile-view-phone">Phone Number</label>
-              <div style="display: flex; gap: 0.5rem; align-items: center;">
-                <input type="tel" id="profile-view-phone" class="form-input" required style="flex: 1;">
-                <button type="button" id="profile-view-verify-btn" class="btn btn-secondary btn-small" onclick="app.triggerProfileOtpVerification()">Verify</button>
-                <span id="profile-view-verified-badge" class="hidden" style="color: var(--success); font-weight: 600; font-size: 0.875rem; display: flex; align-items: center; gap: 0.25rem;"><i data-lucide="check-circle" style="width: 16px;"></i> Verified</span>
+            <div style="text-align: center; margin-bottom: 3rem;">
+              <div class="avatar-edit-wrapper" style="position: relative; display: inline-block;">
+                <img id="profile-view-avatar-preview" src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&h=200&fit=crop" style="width: 130px; height: 130px; border-radius: 50%; object-fit: cover; border: 4px solid var(--bg-card); box-shadow: 0 8px 25px rgba(99, 102, 241, 0.25);" alt="Profile Picture">
+                <button type="button" class="btn-icon" style="position: absolute; bottom: 0; right: 0; background: var(--primary); color: white; box-shadow: 0 4px 10px rgba(99, 102, 241, 0.4); border: 3px solid var(--bg-card); width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;" onclick="document.getElementById('avatar-url-group').classList.toggle('hidden'); if(window.lucide) window.lucide.createIcons();">
+                  <i data-lucide="camera" style="width: 18px; height: 18px;"></i>
+                </button>
               </div>
             </div>
 
-            <div class="form-group">
-              <label for="profile-view-society">Society / Location</label>
-              <select id="profile-view-society" class="form-input">
+            <div id="avatar-url-group" class="form-group hidden" style="margin-bottom: 2rem; background: var(--bg-body); padding: 1rem; border-radius: 12px; border: 1px dashed var(--border-color);">
+              <label for="profile-view-avatar" style="font-size: 0.85rem; color: var(--primary); font-weight: 600;">Update Profile Photo (URL)</label>
+              <input type="text" id="profile-view-avatar" class="form-input" placeholder="Paste new image URL here..." style="background: white; border-radius: 8px;">
+            </div>
+
+            <div class="form-group" style="margin-bottom: 1.5rem;">
+              <label for="profile-view-name" style="font-weight: 500;">Full Name</label>
+              <input type="text" id="profile-view-name" class="form-input" style="padding: 0.8rem 1rem; border-radius: 10px;" required>
+            </div>
+            
+            <div class="form-group" style="margin-bottom: 1.5rem;">
+              <label for="profile-view-phone" style="font-weight: 500;">Phone Number</label>
+              <div style="display: flex; gap: 0.75rem; align-items: center;">
+                <input type="tel" id="profile-view-phone" class="form-input" style="flex: 1; padding: 0.8rem 1rem; border-radius: 10px;" required>
+                <button type="button" id="profile-view-verify-btn" class="btn btn-secondary" style="border-radius: 10px; padding: 0.8rem 1.25rem;" onclick="app.triggerProfileOtpVerification()">Verify</button>
+                <span id="profile-view-verified-badge" class="hidden" style="color: var(--success); font-weight: 600; font-size: 0.9rem; display: flex; align-items: center; gap: 0.35rem; padding: 0 0.5rem;"><i data-lucide="check-circle" style="width: 18px;"></i> Verified</span>
+              </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 2.5rem;">
+              <label for="profile-view-society" style="font-weight: 500;">Society / Location</label>
+              <select id="profile-view-society" class="form-input" style="padding: 0.8rem 1rem; border-radius: 10px;">
                 <option value="gokuldham">Gokuldham Society</option>
                 <option value="shanti_kunj">Shanti Kunj Apartments</option>
                 <option value="green_valley">Green Valley Residency</option>
@@ -740,7 +750,7 @@
               </select>
             </div>
 
-            <button type="submit" class="btn btn-primary" style="width: 100%;">Save Changes</button>
+            <button type="submit" class="btn btn-primary" style="width: 100%; padding: 1rem; border-radius: 10px; font-size: 1rem; font-weight: 600; box-shadow: 0 8px 20px rgba(99, 102, 241, 0.3);">Save Changes</button>
           </form>
         </div>
       </div>
