@@ -262,7 +262,7 @@ class ProviderExtension {
         return `
           <div class="job-request-item" id="req-${req.id}">
             <div class="job-req-header" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem;">
-              <span class="job-req-client" style="font-weight: 600;">Client: Abhishek K.</span>
+              <span class="job-req-client" style="font-weight: 600;">Client: ${req.customerName || 'Customer'}</span>
               <div class="text-right">
                 <span class="job-req-price" id="total-${req.id}" style="font-size: 1.15rem; font-weight: 700; color: var(--primary);">₹${req.totalPrice.toFixed(2)}</span>
                 <div class="provider-split-info" style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.15rem;">
@@ -317,7 +317,7 @@ class ProviderExtension {
             </div>
             <div class="schedule-details">
               <h4>${(job.services || job.servicesSelected || []).map(s => s.name).join(', ')}</h4>
-              <p>Client: Abhishek K. • ${job.time} • <strong style="color: var(--success);">Payout: ₹${payout.toFixed(2)}</strong></p>
+              <p>Client: ${job.customerName || 'Customer'} &bull; ${job.time} &bull; <strong style="color: var(--success);">Payout: ₹${payout.toFixed(2)}</strong></p>
             </div>
             <div>
               <button class="btn btn-primary btn-small" onclick="app.completeJob('${job.id}')">Complete Job</button>
