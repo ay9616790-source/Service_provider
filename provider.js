@@ -69,15 +69,20 @@ class ProviderExtension {
     const legendItems = [];
 
     mappableBookings.forEach((booking, i) => {
-      // Get client society — use booking.clientSociety or fallback to random society for demo
-      const societyId = booking.clientSociety || ['gokuldham','shanti_kunj','green_valley','royal_palms'][i % 4];
-      const clientCoords = this.getSocietyCoords(societyId);
+      // Get client coordinates — prioritize exact lat/lng, fallback to society jitter
+      let finalLat, finalLng;
+      if (booking.lat !== undefined && booking.lng !== undefined) {
+        finalLat = parseFloat(booking.lat);
+        finalLng = parseFloat(booking.lng);
+      } else {
+        const societyId = booking.clientSociety || ['gokuldham','shanti_kunj','green_valley','royal_palms'][i % 4];
+        const clientCoords = this.getSocietyCoords(societyId);
+        // Small jitter so overlapping markers are visible for hardcoded societies
+        finalLat = clientCoords.lat + (Math.random() - 0.5) * 0.003;
+        finalLng = clientCoords.lng + (Math.random() - 0.5) * 0.003;
+      }
 
-      // Small jitter so overlapping markers are visible
-      const jitterLat = clientCoords.lat + (Math.random() - 0.5) * 0.003;
-      const jitterLng = clientCoords.lng + (Math.random() - 0.5) * 0.003;
-
-      const dist = this.haversineDistance(providerCoords.lat, providerCoords.lng, jitterLat, jitterLng);
+      const dist = this.haversineDistance(providerCoords.lat, providerCoords.lng, finalLat, finalLng);
       const distStr = dist < 1 ? `${(dist * 1000).toFixed(0)} m` : `${dist.toFixed(1)} km`;
 
       const color = booking.status === 'pending' ? '#f59e0b' : '#10b981';
@@ -91,7 +96,7 @@ class ProviderExtension {
 
       const services = (booking.services || booking.servicesSelected || []).map(s => s.name).join(', ') || 'Service';
 
-      L.marker([jitterLat, jitterLng], { icon: clientIcon })
+      L.marker([finalLat, finalLng], { icon: clientIcon })
         .addTo(map)
         .bindPopup(`
           <div style="min-width:160px">
@@ -103,11 +108,11 @@ class ProviderExtension {
         `);
 
       // Draw dashed line from provider to client
-      L.polyline([[providerCoords.lat, providerCoords.lng], [jitterLat, jitterLng]], {
+      L.polyline([[providerCoords.lat, providerCoords.lng], [finalLat, finalLng]], {
         color: color, weight: 2, dashArray: '6,6', opacity: 0.7
       }).addTo(map);
 
-      bounds.push([jitterLat, jitterLng]);
+      bounds.push([finalLat, finalLng]);
 
       legendItems.push({ services, distStr, status: booking.status, color, date: booking.date });
     });

@@ -60,6 +60,8 @@ const BookingSchema = new mongoose.Schema({
   providerId: { type: String, required: true },
   date: String,
   time: String,
+  lat: Number,
+  lng: Number,
   status: { type: String, enum: ['pending', 'accepted', 'completed', 'cancelled'], default: 'pending' },
   bookingMode: String,
   services: [{

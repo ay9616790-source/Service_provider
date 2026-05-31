@@ -385,9 +385,18 @@
                 </div>
               </div>
 
-              <!-- 2. Select Date and Time -->
+              <!-- Select Location -->
               <div class="booking-step-group">
-                <label class="step-section-title">2. Select Schedule</label>
+                <label class="step-section-title">2. Select Location</label>
+                <button id="btn-use-location" class="btn btn-outline btn-small mt-2" style="width: 100%; display: flex; align-items: center; justify-content: center; gap: 0.5rem;" onclick="app.fetchCurrentLocation()">
+                  <i data-lucide="map-pin" style="width: 16px; height: 16px;"></i> Use Current Location
+                </button>
+                <div id="location-status" class="mt-2 text-sm text-muted hidden text-center"></div>
+              </div>
+
+              <!-- 3. Select Date and Time -->
+              <div class="booking-step-group">
+                <label class="step-section-title">3. Select Schedule</label>
                 <div class="date-time-flex">
                   <div class="date-picker-wrapper">
                     <label for="booking-date" class="input-label-small">Date</label>

@@ -740,6 +740,7 @@ class ServifyApp {
   // --- DETAIL VIEW & CHECKOUT ---
   viewProviderDetail(providerId) {
     this.state.selectedProviderId = providerId;
+    this.state.tempBookingLocation = null; // Reset location for new booking
     const pro = this.state.providers.find(p => p.id === providerId);
     if (!pro) return;
 
@@ -870,6 +871,39 @@ class ServifyApp {
     }
   }
 
+  fetchCurrentLocation() {
+    const statusDiv = document.getElementById('location-status');
+    if (!statusDiv) return;
+    
+    statusDiv.classList.remove('hidden');
+    statusDiv.textContent = "Fetching location...";
+    statusDiv.className = "mt-2 text-sm text-center font-medium text-primary";
+
+    if (!navigator.geolocation) {
+      statusDiv.textContent = "Geolocation is not supported by your browser.";
+      statusDiv.className = "mt-2 text-sm text-center font-medium text-red-500";
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        this.state.tempBookingLocation = {
+          lat: position.coords.latitude,
+          lng: position.coords.longitude
+        };
+        statusDiv.textContent = "Location acquired ✅";
+        statusDiv.className = "mt-2 text-sm text-center font-medium text-green-500";
+        this.showToast("Location captured successfully!");
+      },
+      (error) => {
+        statusDiv.textContent = "Failed to get location. Please allow permissions.";
+        statusDiv.className = "mt-2 text-sm text-center font-medium text-red-500";
+        console.warn('Geolocation error:', error);
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+  }
+
   calculateBookingPrice() {
     const selectedMode = document.querySelector('input[name="booking-mode"]:checked')?.value || 'standard';
     let subtotal = 0;
@@ -936,6 +970,8 @@ class ServifyApp {
           providerId: selectedPro.id,
           date: bookingDate,
           time: bookingTime,
+          lat: this.state.tempBookingLocation ? this.state.tempBookingLocation.lat : undefined,
+          lng: this.state.tempBookingLocation ? this.state.tempBookingLocation.lng : undefined,
           bookingMode: selectedMode,
           servicesSelected: selectedServices,
           customPrice: selectedMode === 'custom' ? subtotal : 0,
@@ -965,6 +1001,8 @@ class ServifyApp {
             providerId: selectedPro.id,
             date: bookingDate,
             time: bookingTime,
+            lat: this.state.tempBookingLocation ? this.state.tempBookingLocation.lat : undefined,
+            lng: this.state.tempBookingLocation ? this.state.tempBookingLocation.lng : undefined,
             bookingMode: selectedMode,
             servicesSelected: selectedMode === 'standard' ? selectedServices : [],
             customPrice: selectedMode === 'custom' ? subtotal : 0
@@ -988,6 +1026,8 @@ class ServifyApp {
           providerAvatar: selectedPro.avatar,
           date: bookingDate,
           time: bookingTime,
+          lat: this.state.tempBookingLocation ? this.state.tempBookingLocation.lat : undefined,
+          lng: this.state.tempBookingLocation ? this.state.tempBookingLocation.lng : undefined,
           servicesSelected: selectedServices,
           subtotalPrice: subtotal,
           serviceFee: serviceFee,
@@ -1395,6 +1435,8 @@ class ServifyApp {
           providerId: details.providerId,
           date: details.date,
           time: details.time,
+          lat: details.lat,
+          lng: details.lng,
           bookingMode: details.bookingMode,
           servicesSelected: details.bookingMode === 'standard' ? details.servicesSelected : [],
           customPrice: details.bookingMode === 'custom' ? details.subtotal : 0
@@ -1418,6 +1460,8 @@ class ServifyApp {
         providerAvatar: selectedPro.avatar,
         date: details.date,
         time: details.time,
+        lat: details.lat,
+        lng: details.lng,
         servicesSelected: details.servicesSelected,
         subtotalPrice: details.subtotal,
         serviceFee: details.serviceFee,
