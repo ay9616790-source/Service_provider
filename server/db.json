@@ -56,7 +56,7 @@
   ],
   "providers": [
     {
-      "id": "yLcEElEC_mY",
+      "id": "abhay_p1",
       "name": "Abhay",
       "category": "electrician",
       "rating": 5,
@@ -65,28 +65,112 @@
       "hourlyRate": 40,
       "avatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&h=200&fit=crop&q=80",
       "banner": "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=800&h=300&fit=crop&q=80",
-      "tagline": "Certified professional",
+      "tagline": "Certified professional electrician",
       "isVerified": false,
       "phone": "7398240017",
       "societies": [
         "gokuldham"
       ],
-      "address": "",
-      "bio": "Professional offering quality service.",
+      "address": "Gokuldham, Mumbai",
+      "bio": "Professional electrician offering quality service.",
       "skills": [
-        "General"
+        "Electrician",
+        "Fan Installation",
+        "Wiring"
       ],
       "pricingList": [
         {
-          "id": "srv_1780224291772",
+          "id": "srv_1",
+          "name": "General Consultation & Repair",
+          "price": 40
+        },
+        {
+          "id": "srv_2",
+          "name": "Fan Installation",
+          "price": 60
+        },
+        {
+          "id": "srv_3",
+          "name": "Short Circuit Fix",
+          "price": 80
+        }
+      ],
+      "isProfileComplete": true,
+      "reviews": []
+    }
+  ],
+  "bookings": [
+    {
+      "id": "b_test_001",
+      "providerId": "abhay_p1",
+      "providerName": "Abhay",
+      "providerCategory": "electrician",
+      "providerAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&h=200&fit=crop&q=80",
+      "date": "2026-06-05",
+      "time": "10:00 AM",
+      "bookingMode": "standard",
+      "services": [
+        {
+          "name": "Fan Installation",
+          "price": 60
+        }
+      ],
+      "clientSociety": "shanti_kunj",
+      "subtotalPrice": 60,
+      "platformCommission": 9,
+      "workerPayout": 51,
+      "totalPrice": 65,
+      "status": "pending"
+    },
+    {
+      "id": "b_test_002",
+      "providerId": "abhay_p1",
+      "providerName": "Abhay",
+      "providerCategory": "electrician",
+      "providerAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&h=200&fit=crop&q=80",
+      "date": "2026-06-07",
+      "time": "02:00 PM",
+      "bookingMode": "standard",
+      "services": [
+        {
+          "name": "Short Circuit Fix",
+          "price": 80
+        },
+        {
           "name": "General Consultation & Repair",
           "price": 40
         }
       ],
-      "reviews": []
+      "clientSociety": "green_valley",
+      "subtotalPrice": 120,
+      "platformCommission": 18,
+      "workerPayout": 102,
+      "totalPrice": 125,
+      "status": "pending"
+    },
+    {
+      "id": "b_test_003",
+      "providerId": "abhay_p1",
+      "providerName": "Abhay",
+      "providerCategory": "electrician",
+      "providerAvatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&h=200&fit=crop&q=80",
+      "date": "2026-06-03",
+      "time": "11:00 AM",
+      "bookingMode": "custom",
+      "services": [
+        {
+          "name": "Agreed Phone Rate",
+          "price": 150
+        }
+      ],
+      "clientSociety": "royal_palms",
+      "subtotalPrice": 150,
+      "platformCommission": 22.5,
+      "workerPayout": 127.5,
+      "totalPrice": 155,
+      "status": "accepted"
     }
   ],
-  "bookings": [],
   "users": [
     {
       "id": "u_1779870132311",
@@ -100,46 +184,13 @@
       "providerId": null
     },
     {
-      "id": "u_1779870172028",
-      "email": "provide@servify.com",
-      "password": "password123",
-      "name": "Abhishek Kumar",
-      "role": "provider",
-      "phone": "",
-      "society": "gokuldham",
-      "avatar": "https://images.unsplash.com/photo-1540569014015-19a7be504e3a?w=200&h=200&fit=crop&q=80",
-      "providerId": "p_1779870172028"
-    },
-    {
-      "id": "u_1779969539525",
-      "email": "ay9616790@gmail.com",
-      "password": "1235",
-      "name": "Abhishek Kumar",
-      "role": "provider",
-      "phone": "8447942120",
-      "society": "gokuldham",
-      "avatar": "https://images.unsplash.com/photo-1540569014015-19a7be504e3a?w=200&h=200&fit=crop&q=80",
-      "providerId": "p_1779969539525"
-    },
-    {
-      "id": "u_1779976322610",
-      "email": "ay9616@gmail.com",
-      "password": "1234",
-      "name": "Abhishek Kumar",
-      "role": "customer",
-      "phone": "8447942120",
-      "society": "gokuldham",
-      "avatar": "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&h=200&fit=crop&q=80",
-      "providerId": null
-    },
-    {
       "id": "5dFe67yuOt0",
       "email": "customer@servify.com",
       "password": "password@123",
       "name": "Anshuman Pandit",
       "role": "customer",
       "phone": "+919599878596",
-      "society": "gokuldham",
+      "society": "shanti_kunj",
       "avatar": "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&h=200&fit=crop&q=80",
       "providerId": null
     },
@@ -152,7 +203,7 @@
       "phone": "7398240017",
       "society": "gokuldham",
       "avatar": "https://images.unsplash.com/photo-1540569014015-19a7be504e3a?w=200&h=200&fit=crop&q=80",
-      "providerId": "p_1780224291772"
+      "providerId": "abhay_p1"
     }
   ],
   "$schema": "./node_modules/json-server/schema.json"

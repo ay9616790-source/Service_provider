@@ -1,4 +1,4 @@
-const API_BASE_URL = `http://${window.location.hostname || 'localhost'}:5000`;
+const API_BASE_URL = '';
 
 // Servify Core Application State Manager
 class ServifyApp {
@@ -1209,9 +1209,10 @@ class ServifyApp {
 
     if (activeTab === 'login') {
       try {
-        // Query json-server /users with matching email + password
+        // Fetch by email only — compare password in JS to avoid URL-encoding issues
+        // (passwords with @ or special chars break json-server query filter)
         const response = await fetch(
-          `${API_BASE_URL}/users?email=${encodeURIComponent(email.toLowerCase())}&password=${encodeURIComponent(password)}`
+          `${API_BASE_URL}/users?email=${encodeURIComponent(email.toLowerCase())}`
         );
         const users = await response.json();
 
@@ -1219,9 +1220,13 @@ class ServifyApp {
           throw new Error('Invalid email or password.');
         }
 
-        const user = users[0];
+        // Compare password client-side
+        const user = users.find(u => u.password === password);
+        if (!user) {
+          throw new Error('Invalid email or password.');
+        }
 
-        // Fetch provider profile if role is provider
+        // Fetch linked provider profile if role is provider
         if (user.role === 'provider' && user.providerId) {
           const provRes = await fetch(`${API_BASE_URL}/providers?id=${encodeURIComponent(user.providerId)}`);
           const provs = await provRes.json();
