@@ -1831,6 +1831,64 @@ a:hover {
   padding: 0.35rem;
 }
 
+/* --- PROVIDER MAP CARD --- */
+.map-distance-badge {
+  background: linear-gradient(135deg, #6c63ff, #a855f7);
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 0.3rem 0.75rem;
+  border-radius: 2rem;
+  white-space: nowrap;
+}
+.map-legend-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  border-top: 1px solid var(--border);
+  padding-top: 0.75rem;
+}
+.map-legend-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.82rem;
+  padding: 0.4rem 0.5rem;
+  border-radius: 0.5rem;
+  background: var(--bg-offset);
+  border: 1px solid var(--border);
+}
+.map-legend-dot {
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.map-legend-service {
+  flex-grow: 1;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.map-legend-meta {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+.map-legend-dist {
+  font-weight: 700;
+  color: #6c63ff;
+  white-space: nowrap;
+}
+.map-legend-status {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: capitalize;
+  white-space: nowrap;
+}
+
 /* --- FOOTER --- */
 .app-footer {
   background-color: var(--bg-secondary);

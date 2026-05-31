@@ -54,7 +54,38 @@
       "bgGradient": "linear-gradient(135deg, #cfd9df 0%, #e2ebf0 100%)"
     }
   ],
-  "providers": [],
+  "providers": [
+    {
+      "id": "yLcEElEC_mY",
+      "name": "Abhay",
+      "category": "electrician",
+      "rating": 5,
+      "reviewsCount": 0,
+      "experience": 1,
+      "hourlyRate": 40,
+      "avatar": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&h=200&fit=crop&q=80",
+      "banner": "https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=800&h=300&fit=crop&q=80",
+      "tagline": "Certified professional",
+      "isVerified": false,
+      "phone": "7398240017",
+      "societies": [
+        "gokuldham"
+      ],
+      "address": "",
+      "bio": "Professional offering quality service.",
+      "skills": [
+        "General"
+      ],
+      "pricingList": [
+        {
+          "id": "srv_1780224291772",
+          "name": "General Consultation & Repair",
+          "price": 40
+        }
+      ],
+      "reviews": []
+    }
+  ],
   "bookings": [],
   "users": [
     {
@@ -111,6 +142,17 @@
       "society": "gokuldham",
       "avatar": "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&h=200&fit=crop&q=80",
       "providerId": null
+    },
+    {
+      "id": "T-vHJZLUeUQ",
+      "email": "abhay12@gmail.com",
+      "password": "password@1234",
+      "name": "Abhay",
+      "role": "provider",
+      "phone": "7398240017",
+      "society": "gokuldham",
+      "avatar": "https://images.unsplash.com/photo-1540569014015-19a7be504e3a?w=200&h=200&fit=crop&q=80",
+      "providerId": "p_1780224291772"
     }
   ],
   "$schema": "./node_modules/json-server/schema.json"

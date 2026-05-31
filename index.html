@@ -16,6 +16,9 @@
   
   <!-- Lucide Icons CDN -->
   <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Leaflet Map CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 </head>
 <body>
 
@@ -617,6 +620,19 @@
             </div>
           </div>
 
+          <!-- Client Locations Map -->
+          <div class="provider-card col-span-2" id="provider-map-card">
+            <div class="card-header-flex">
+              <div>
+                <h3>📍 Client Booking Locations</h3>
+                <p class="card-subtitle">See where your pending &amp; active jobs are located and estimated distance</p>
+              </div>
+              <span class="map-distance-badge" id="map-total-jobs-badge">0 jobs mapped</span>
+            </div>
+            <div id="provider-bookings-map" style="width:100%; height:340px; border-radius:12px; margin-top:0.75rem; z-index:1; position:relative;"></div>
+            <div id="provider-map-legend" class="map-legend-list" style="margin-top:0.75rem;"></div>
+          </div>
+
           <!-- Active Jobs & Schedules -->
           <div class="provider-card col-span-2">
             <h3>My Active Schedule</h3>
@@ -842,6 +858,9 @@
       </div>
     </div>
   </div>
+
+  <!-- Leaflet Map JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
   <!-- App JavaScript files -->
   <script src="data.js"></script>
