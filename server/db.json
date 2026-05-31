@@ -69,7 +69,10 @@
       "isVerified": false,
       "phone": "7398240017",
       "societies": [
-        "gokuldham"
+        "gokuldham",
+        "shanti_kunj",
+        "green_valley",
+        "royal_palms"
       ],
       "address": "Gokuldham, Mumbai",
       "bio": "Professional electrician offering quality service.",
@@ -120,7 +123,7 @@
       "platformCommission": 9,
       "workerPayout": 51,
       "totalPrice": 65,
-      "status": "pending"
+      "status": "cancelled"
     },
     {
       "id": "b_test_002",
@@ -146,7 +149,7 @@
       "platformCommission": 18,
       "workerPayout": 102,
       "totalPrice": 125,
-      "status": "pending"
+      "status": "cancelled"
     },
     {
       "id": "b_test_003",
@@ -168,7 +171,38 @@
       "platformCommission": 22.5,
       "workerPayout": 127.5,
       "totalPrice": 155,
-      "status": "accepted"
+      "status": "completed"
+    },
+    {
+      "providerId": "abhay_p1",
+      "date": "2026-05-31",
+      "time": "09:00 AM",
+      "bookingMode": "custom",
+      "servicesSelected": [],
+      "customPrice": 71,
+      "id": "y0m2kO6FKX8"
+    },
+    {
+      "providerId": "abhay_p1",
+      "date": "2026-05-31",
+      "time": "09:00 AM",
+      "lat": 28.344572,
+      "lng": 77.55015,
+      "bookingMode": "custom",
+      "servicesSelected": [],
+      "customPrice": 1000,
+      "id": "fSsnh9V16H4"
+    },
+    {
+      "providerId": "abhay_p1",
+      "date": "2026-05-31",
+      "time": "09:00 AM",
+      "lat": 28.344518,
+      "lng": 77.550238,
+      "bookingMode": "custom",
+      "servicesSelected": [],
+      "customPrice": 75,
+      "id": "6-abUjYIoJY"
     }
   ],
   "users": [

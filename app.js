@@ -999,13 +999,24 @@ class ServifyApp {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             providerId: selectedPro.id,
+            providerName: selectedPro.name,
+            providerCategory: selectedPro.category,
+            providerAvatar: selectedPro.avatar,
+            customerName: this.state.currentUser ? this.state.currentUser.name : '',
+            customerPhone: this.state.currentUser ? this.state.currentUser.phone : '',
+            status: 'pending',
             date: bookingDate,
             time: bookingTime,
             lat: this.state.tempBookingLocation ? this.state.tempBookingLocation.lat : undefined,
             lng: this.state.tempBookingLocation ? this.state.tempBookingLocation.lng : undefined,
             bookingMode: selectedMode,
             servicesSelected: selectedMode === 'standard' ? selectedServices : [],
-            customPrice: selectedMode === 'custom' ? subtotal : 0
+            customPrice: selectedMode === 'custom' ? subtotal : 0,
+            subtotalPrice: subtotal,
+            serviceFee: serviceFee,
+            platformCommission: platformCommission,
+            workerPayout: workerPayout,
+            totalPrice: totalPrice
           })
         });
 
@@ -1434,13 +1445,24 @@ class ServifyApp {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           providerId: details.providerId,
+          providerName: selectedPro.name,
+          providerCategory: selectedPro.category,
+          providerAvatar: selectedPro.avatar,
+          customerName: this.state.currentUser ? this.state.currentUser.name : '',
+          customerPhone: this.state.currentUser ? this.state.currentUser.phone : '',
+          status: 'pending',
           date: details.date,
           time: details.time,
           lat: details.lat,
           lng: details.lng,
           bookingMode: details.bookingMode,
           servicesSelected: details.bookingMode === 'standard' ? details.servicesSelected : [],
-          customPrice: details.bookingMode === 'custom' ? details.subtotal : 0
+          customPrice: details.bookingMode === 'custom' ? details.subtotal : 0,
+          subtotalPrice: details.subtotal,
+          serviceFee: details.serviceFee,
+          platformCommission: details.platformCommission,
+          workerPayout: details.workerPayout,
+          totalPrice: details.totalPrice
         })
       });
 
