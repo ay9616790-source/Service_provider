@@ -51,7 +51,42 @@ const ProviderSchema = new mongoose.Schema({
     rating: Number,
     text: String,
     date: String
-  }]
+  }],
+  availability: {
+    isOnline: { type: Boolean, default: true },
+    workingHours: {
+      mon: { open: String, close: String, enabled: Boolean },
+      tue: { open: String, close: String, enabled: Boolean },
+      wed: { open: String, close: String, enabled: Boolean },
+      thu: { open: String, close: String, enabled: Boolean },
+      fri: { open: String, close: String, enabled: Boolean },
+      sat: { open: String, close: String, enabled: Boolean },
+      sun: { open: String, close: String, enabled: Boolean }
+    },
+    blockedDates: [String]
+  },
+  wallet: {
+    balance: { type: Number, default: 0 },
+    transactions: [{
+      id: String,
+      amount: Number,
+      type: { type: String, enum: ['credit', 'debit'] },
+      description: String,
+      date: String
+    }]
+  },
+  notifications: [{
+    id: String,
+    title: String,
+    message: String,
+    type: { type: String, default: 'info' },
+    isRead: { type: Boolean, default: false },
+    date: String
+  }],
+  badges: [String],
+  referralCode: String,
+  monthlyGoal: { type: Number, default: 0 },
+  serviceRadius: { type: Number, default: 10 }
 }, { timestamps: true });
 
 const BookingSchema = new mongoose.Schema({

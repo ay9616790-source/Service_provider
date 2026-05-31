@@ -762,7 +762,298 @@
       </div>
     </section>
 
-    <!-- 5.5 NEW PROFILE DETAILS VIEW (LEETCODE-STYLE FULL PAGE) -->
+    <!-- ===== PARTNER DASHBOARD EXTENDED CARDS SECTION ===== -->
+    <section id="provider-extended-section" class="view-panel" style="display:none;">
+      <div class="container" style="padding-bottom: 3rem;">
+        <div class="provider-grid" id="provider-extended-grid">
+
+          <!-- Availability Toggle Card -->
+          <div class="provider-card" id="availability-card">
+            <div class="card-header-flex">
+              <div>
+                <h3>Availability</h3>
+                <p class="card-subtitle">Control your online status</p>
+              </div>
+              <div class="availability-toggle-wrapper">
+                <span id="availability-status-label" class="avail-label avail-online">Online</span>
+                <label class="avail-toggle-switch">
+                  <input type="checkbox" id="availability-toggle-input" checked>
+                  <span class="avail-toggle-slider"></span>
+                </label>
+              </div>
+            </div>
+            <div class="working-hours-mini" id="working-hours-preview">
+              <div class="wh-day-row"><span class="wh-day-name">Mon – Fri</span><span class="wh-day-time">9:00 AM – 7:00 PM</span></div>
+              <div class="wh-day-row"><span class="wh-day-name">Saturday</span><span class="wh-day-time">10:00 AM – 4:00 PM</span></div>
+              <div class="wh-day-row"><span class="wh-day-name">Sunday</span><span class="wh-day-time" style="color:var(--danger);">Closed</span></div>
+            </div>
+            <button class="btn btn-secondary btn-full" onclick="app.openAvailabilityModal()" style="margin-top:1rem;">
+              <i data-lucide="calendar-clock"></i> Edit Working Hours
+            </button>
+          </div>
+
+          <!-- Performance Metrics Card -->
+          <div class="provider-card col-span-2" id="performance-card">
+            <h3>Performance Metrics</h3>
+            <p class="card-subtitle">Your key performance indicators</p>
+            <div class="metrics-grid">
+              <div class="metric-stat-block metric-green">
+                <div class="metric-icon"><i data-lucide="check-circle"></i></div>
+                <div class="metric-value" id="metric-acceptance-rate">100%</div>
+                <div class="metric-label">Acceptance Rate</div>
+              </div>
+              <div class="metric-stat-block metric-blue">
+                <div class="metric-icon"><i data-lucide="flag"></i></div>
+                <div class="metric-value" id="metric-completion-rate">0%</div>
+                <div class="metric-label">Completion Rate</div>
+              </div>
+              <div class="metric-stat-block metric-purple">
+                <div class="metric-icon"><i data-lucide="users"></i></div>
+                <div class="metric-value" id="metric-total-clients">0</div>
+                <div class="metric-label">Total Clients</div>
+              </div>
+              <div class="metric-stat-block metric-orange">
+                <div class="metric-icon"><i data-lucide="repeat"></i></div>
+                <div class="metric-value" id="metric-repeat-clients">0</div>
+                <div class="metric-label">Repeat Clients</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Wallet / Payout Card -->
+          <div class="provider-card col-span-2" id="wallet-card">
+            <div class="card-header-flex">
+              <div>
+                <h3>Wallet &amp; Payouts</h3>
+                <p class="card-subtitle">Your earnings balance</p>
+              </div>
+              <button class="btn btn-primary btn-small" onclick="app.openWithdrawModal()">
+                <i data-lucide="arrow-up-right"></i> Withdraw
+              </button>
+            </div>
+            <div class="wallet-balance-hero">
+              <div class="wallet-balance-label">Available Balance</div>
+              <div class="wallet-balance-amount" id="wallet-balance-display">₹0.00</div>
+              <div class="wallet-balance-sub" id="wallet-lifetime-display">Lifetime earned: ₹0.00</div>
+            </div>
+            <div class="wallet-transactions-list" id="wallet-transactions-container">
+              <p class="text-muted text-center py-4">No transactions yet.</p>
+            </div>
+          </div>
+
+          <!-- Notifications Card -->
+          <div class="provider-card" id="notifications-card">
+            <div class="card-header-flex">
+              <div style="display:flex;align-items:center;gap:0.5rem;">
+                <h3>Notifications</h3>
+                <span class="notif-unread-badge" id="notif-unread-count" style="display:none;">0</span>
+              </div>
+              <button class="btn-icon-sm" onclick="app.markNotificationsRead()" title="Mark all read">
+                <i data-lucide="check-check"></i>
+              </button>
+            </div>
+            <div class="notification-feed" id="notification-feed-container">
+              <p class="text-muted text-center py-4">No notifications.</p>
+            </div>
+          </div>
+
+          <!-- Ratings & Reviews Card -->
+          <div class="provider-card col-span-2" id="reviews-card">
+            <div class="card-header-flex">
+              <div>
+                <h3>Ratings &amp; Reviews</h3>
+                <p class="card-subtitle">What clients say about you</p>
+              </div>
+              <div class="rating-hero-display">
+                <span class="rating-big-num" id="provider-avg-rating">5.0</span>
+                <div class="rating-stars-display" id="provider-rating-stars">★★★★★</div>
+                <span class="rating-count" id="provider-review-count">0 reviews</span>
+              </div>
+            </div>
+            <div class="reviews-list-scroll" id="reviews-list-container">
+              <p class="text-muted text-center py-4">No reviews yet. Complete jobs to receive ratings.</p>
+            </div>
+          </div>
+
+          <!-- Top Services Breakdown Card -->
+          <div class="provider-card" id="top-services-card">
+            <h3>Top Services</h3>
+            <p class="card-subtitle">Revenue by service type</p>
+            <div class="top-services-chart" id="top-services-chart-container">
+              <p class="text-muted text-center py-4">Complete jobs to see service breakdown.</p>
+            </div>
+          </div>
+
+          <!-- Goals & Badges Card -->
+          <div class="provider-card col-span-3" id="goals-badges-card">
+            <div class="card-header-flex">
+              <div>
+                <h3>Goals &amp; Achievements</h3>
+                <p class="card-subtitle">Monthly targets and milestone badges</p>
+              </div>
+              <button class="btn btn-secondary btn-small" onclick="app.openGoalModal()">
+                <i data-lucide="target"></i> Set Goal
+              </button>
+            </div>
+            <div class="goals-badges-layout">
+              <div class="goal-ring-section">
+                <div class="goal-ring-wrapper">
+                  <svg class="goal-ring-svg" viewBox="0 0 120 120">
+                    <circle class="goal-ring-bg" cx="60" cy="60" r="50"/>
+                    <circle class="goal-ring-progress" id="goal-ring-circle" cx="60" cy="60" r="50" stroke-dasharray="314" stroke-dashoffset="314"/>
+                  </svg>
+                  <div class="goal-ring-center">
+                    <span class="goal-ring-pct" id="goal-ring-pct">0%</span>
+                    <span class="goal-ring-sub">of goal</span>
+                  </div>
+                </div>
+                <div class="goal-ring-details">
+                  <div class="goal-detail-row"><span class="goal-detail-label">This Month</span><span class="goal-detail-val" id="goal-current-val">₹0</span></div>
+                  <div class="goal-detail-row"><span class="goal-detail-label">Target</span><span class="goal-detail-val" id="goal-target-val">Not set</span></div>
+                </div>
+              </div>
+              <div class="badges-grid-section">
+                <h4 class="badges-title">Earned Badges</h4>
+                <div class="badges-grid" id="badges-grid-container"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Referral Program Card -->
+          <div class="provider-card" id="referral-card">
+            <h3>Referral Program</h3>
+            <p class="card-subtitle">Earn ₹200 per successful referral</p>
+            <div class="referral-code-box">
+              <span class="referral-code-label">Your Referral Code</span>
+              <div class="referral-code-display">
+                <span class="referral-code-text" id="referral-code-text">SERV-XXXX</span>
+                <button class="referral-copy-btn" onclick="app.copyReferralCode()" title="Copy code"><i data-lucide="copy"></i></button>
+              </div>
+            </div>
+            <div class="referral-stats-row">
+              <div class="referral-stat"><span class="referral-stat-val" id="referral-invited">0</span><span class="referral-stat-label">Invited</span></div>
+              <div class="referral-stat"><span class="referral-stat-val" id="referral-joined">0</span><span class="referral-stat-label">Joined</span></div>
+              <div class="referral-stat"><span class="referral-stat-val" id="referral-earned">₹0</span><span class="referral-stat-label">Earned</span></div>
+            </div>
+            <button class="btn btn-primary btn-full" onclick="app.shareReferralLink()" style="margin-top:1rem;">
+              <i data-lucide="share-2"></i> Share Referral Link
+            </button>
+          </div>
+
+          <!-- Service Area Card -->
+          <div class="provider-card col-span-2" id="service-area-card">
+            <div class="card-header-flex">
+              <div>
+                <h3>Service Area</h3>
+                <p class="card-subtitle">Set the radius you serve</p>
+              </div>
+              <span class="service-radius-badge" id="service-radius-badge">10 km</span>
+            </div>
+            <div class="service-area-visual">
+              <div class="service-area-circle-wrapper">
+                <div class="service-area-outer" id="service-area-outer">
+                  <div class="service-area-inner">
+                    <i data-lucide="map-pin" class="service-area-pin"></i>
+                    <span>Your Location</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="service-radius-slider-wrapper">
+              <span class="slider-label">5 km</span>
+              <input type="range" id="service-radius-slider" min="5" max="50" value="10" step="5" class="service-radius-slider">
+              <span class="slider-label">50 km</span>
+            </div>
+            <p class="service-area-hint">Drag the slider to set your service radius. Clients within this area can discover you.</p>
+          </div>
+
+        </div><!-- end provider-extended-grid -->
+      </div>
+    </section>
+
+    <!-- ===== NEW MODALS ===== -->
+
+    <!-- Availability / Working Hours Modal -->
+    <div id="availability-modal" class="modal-overlay hidden">
+      <div class="modal-card" style="max-width:520px;">
+        <div class="modal-header">
+          <h3>Edit Working Hours</h3>
+          <button class="modal-close-btn" onclick="document.getElementById('availability-modal').classList.add('hidden')"><i data-lucide="x"></i></button>
+        </div>
+        <div class="modal-body">
+          <div class="working-hours-grid" id="working-hours-editor"></div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" onclick="document.getElementById('availability-modal').classList.add('hidden')">Cancel</button>
+          <button class="btn btn-primary" onclick="app.saveWorkingHours()">Save Hours</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Withdraw Modal -->
+    <div id="withdraw-modal" class="modal-overlay hidden">
+      <div class="modal-card" style="max-width:420px;">
+        <div class="modal-header">
+          <h3>Withdraw Earnings</h3>
+          <button class="modal-close-btn" onclick="document.getElementById('withdraw-modal').classList.add('hidden')"><i data-lucide="x"></i></button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group" style="margin-bottom:1rem;">
+            <label class="input-label-small">Withdrawal Amount (₹)</label>
+            <input type="number" id="withdraw-amount-input" class="form-input-small" style="width:100%;" placeholder="Enter amount" min="1">
+          </div>
+          <div class="form-group" style="margin-bottom:1rem;">
+            <label class="input-label-small">Payment Method</label>
+            <select id="withdraw-method-select" class="form-input-small" style="width:100%;">
+              <option value="UPI">UPI</option>
+              <option value="Bank Transfer">Bank Transfer</option>
+              <option value="PayTM">PayTM</option>
+              <option value="PhonePe">PhonePe</option>
+            </select>
+          </div>
+          <div class="wallet-available-hint">Available: <strong id="withdraw-available-amount">₹0.00</strong></div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" onclick="document.getElementById('withdraw-modal').classList.add('hidden')">Cancel</button>
+          <button class="btn btn-primary" onclick="app.processWithdrawal()">Withdraw Now</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Set Monthly Goal Modal -->
+    <div id="goal-modal" class="modal-overlay hidden">
+      <div class="modal-card" style="max-width:400px;">
+        <div class="modal-header">
+          <h3>Set Monthly Earning Goal</h3>
+          <button class="modal-close-btn" onclick="document.getElementById('goal-modal').classList.add('hidden')"><i data-lucide="x"></i></button>
+        </div>
+        <div class="modal-body">
+          <label class="input-label-small">Monthly Target Amount (₹)</label>
+          <input type="number" id="goal-amount-input" class="form-input-small" style="width:100%;margin-top:0.5rem;" placeholder="e.g. 50000" min="0">
+          <p style="margin-top:0.75rem;font-size:0.83rem;color:var(--text-secondary);">Set a target to track your monthly earning progress with a visual ring indicator.</p>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" onclick="document.getElementById('goal-modal').classList.add('hidden')">Cancel</button>
+          <button class="btn btn-primary" onclick="app.saveMonthlyGoal()">Save Goal</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Print Invoice Overlay -->
+    <div id="invoice-print-overlay" class="modal-overlay hidden">
+      <div class="modal-card invoice-print-card" style="max-width:680px;">
+        <div class="modal-header no-print">
+          <h3>Invoice Preview</h3>
+          <div style="display:flex;gap:0.5rem;">
+            <button class="btn btn-primary btn-small" onclick="window.print()"><i data-lucide="printer"></i> Print / Save PDF</button>
+            <button class="modal-close-btn" onclick="document.getElementById('invoice-print-overlay').classList.add('hidden')"><i data-lucide="x"></i></button>
+          </div>
+        </div>
+        <div class="modal-body invoice-body" id="invoice-print-body"></div>
+      </div>
+    </div>
+
+
     <section id="profile-details-view" class="view-panel">
       <div class="container profile-details-wrapper">
         <div class="profile-breadcrumb">

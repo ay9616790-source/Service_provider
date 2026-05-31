@@ -409,7 +409,135 @@ app.post('/api/providers/:id/profile', async (req, res) => {
   }
 });
 
-// 10. Update Customer Profile metadata
+// 9.1 Update Provider Availability
+app.post('/api/providers/:id/availability', async (req, res) => {
+  try {
+    const { isOnline, workingHours, blockedDates } = req.body;
+    const provider = await Provider.findOne({ id: req.params.id });
+    if (!provider) return res.status(404).json({ error: 'Provider not found.' });
+
+    if (!provider.availability) provider.availability = {};
+    if (isOnline !== undefined) provider.availability.isOnline = isOnline;
+    if (workingHours) provider.availability.workingHours = workingHours;
+    if (blockedDates) provider.availability.blockedDates = blockedDates;
+    provider.markModified('availability');
+    await provider.save();
+    res.json({ success: true, availability: provider.availability });
+  } catch (err) {
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
+// 9.2 Update Service Radius
+app.post('/api/providers/:id/radius', async (req, res) => {
+  try {
+    const { serviceRadius } = req.body;
+    const provider = await Provider.findOneAndUpdate(
+      { id: req.params.id },
+      { serviceRadius: parseInt(serviceRadius) || 10 },
+      { new: true }
+    );
+    if (!provider) return res.status(404).json({ error: 'Provider not found.' });
+    res.json({ success: true, serviceRadius: provider.serviceRadius });
+  } catch (err) {
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
+// 9.3 Get Provider Stats (acceptance rate, completion rate, etc.)
+app.get('/api/providers/:id/stats', async (req, res) => {
+  try {
+    const bookings = await Booking.find({ providerId: req.params.id });
+    const total = bookings.length;
+    const pending = bookings.filter(b => b.status === 'pending').length;
+    const accepted = bookings.filter(b => b.status === 'accepted').length;
+    const completed = bookings.filter(b => b.status === 'completed').length;
+    const cancelled = bookings.filter(b => b.status === 'cancelled').length;
+
+    const uniqueClients = [...new Set(bookings.filter(b => b.customerId).map(b => b.customerId))];
+    const repeatClients = uniqueClients.filter(cId => bookings.filter(b => b.customerId === cId).length > 1).length;
+
+    const decisionTotal = accepted + cancelled;
+    const acceptanceRate = decisionTotal > 0 ? Math.round((accepted / decisionTotal) * 100) : 100;
+    const completionTotal = accepted + completed;
+    const completionRate = completionTotal > 0 ? Math.round((completed / completionTotal) * 100) : 0;
+
+    res.json({ total, accepted, completed, cancelled, pending, acceptanceRate, completionRate, totalClients: uniqueClients.length, repeatClients });
+  } catch (err) {
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
+// 9.4 Set Monthly Goal
+app.post('/api/providers/:id/goal', async (req, res) => {
+  try {
+    const { monthlyGoal } = req.body;
+    const provider = await Provider.findOneAndUpdate(
+      { id: req.params.id },
+      { monthlyGoal: parseFloat(monthlyGoal) || 0 },
+      { new: true }
+    );
+    if (!provider) return res.status(404).json({ error: 'Provider not found.' });
+    res.json({ success: true, monthlyGoal: provider.monthlyGoal });
+  } catch (err) {
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
+// 9.5 Get Provider Notifications
+app.get('/api/providers/:id/notifications', async (req, res) => {
+  try {
+    const provider = await Provider.findOne({ id: req.params.id });
+    if (!provider) return res.status(404).json({ error: 'Provider not found.' });
+    res.json(provider.notifications || []);
+  } catch (err) {
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
+// 9.6 Mark Notifications as Read
+app.post('/api/providers/:id/notifications/read', async (req, res) => {
+  try {
+    const provider = await Provider.findOne({ id: req.params.id });
+    if (!provider) return res.status(404).json({ error: 'Provider not found.' });
+    provider.notifications.forEach(n => n.isRead = true);
+    provider.markModified('notifications');
+    await provider.save();
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
+// 9.7 Wallet — Request Withdrawal
+app.post('/api/providers/:id/wallet/withdraw', async (req, res) => {
+  try {
+    const { amount, method } = req.body;
+    const withdrawAmount = parseFloat(amount);
+    if (!withdrawAmount || withdrawAmount <= 0) return res.status(400).json({ error: 'Invalid withdrawal amount.' });
+
+    const provider = await Provider.findOne({ id: req.params.id });
+    if (!provider) return res.status(404).json({ error: 'Provider not found.' });
+    if (!provider.wallet) provider.wallet = { balance: 0, transactions: [] };
+    if (provider.wallet.balance < withdrawAmount) return res.status(400).json({ error: 'Insufficient wallet balance.' });
+
+    provider.wallet.balance -= withdrawAmount;
+    provider.wallet.transactions.push({
+      id: 'txn_' + Date.now(),
+      amount: withdrawAmount,
+      type: 'debit',
+      description: `Withdrawal via ${method || 'UPI'}`,
+      date: new Date().toLocaleDateString('en-IN')
+    });
+    provider.markModified('wallet');
+    await provider.save();
+    res.json({ success: true, balance: provider.wallet.balance });
+  } catch (err) {
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
+
 app.post('/api/users/:id/profile', async (req, res) => {
   try {
     const { name, phone, society, avatar } = req.body;

@@ -87,6 +87,7 @@ class ServifyApp {
     this.updateExploreResults();
     this.renderUserBookings();
     this.renderProviderDashboard();
+    this.renderExtendedDashboard();
 
     // Wire Login Portal Buttons
     const btnClient = document.getElementById('btn-login-client');
@@ -276,6 +277,7 @@ class ServifyApp {
     // Force refresh displays
     this.renderUserBookings();
     this.renderProviderDashboard();
+    this.renderExtendedDashboard();
     this.renderFeaturedProviders();
     this.updateExploreResults();
   }
