@@ -28,6 +28,11 @@ app.get('/', (req, res) => {
 
 app.get('/.well-known/appspecific/com.chrome.devtools.json', (req, res) => res.status(200).json({}));
 
+app.post('/api/log-error', (req, res) => {
+  console.error('[FRONTEND ERROR CAUGHT]:', req.body);
+  res.status(200).json({ success: true });
+});
+
 // 1. Get initial configuration
 app.get('/api/providers', async (req, res) => {
   try {
@@ -366,7 +371,7 @@ app.post('/api/providers/:id/rates', async (req, res) => {
 // 9. Update Provider Profile metadata
 app.post('/api/providers/:id/profile', async (req, res) => {
   try {
-    const { name, phone, email, whatsapp, category, address, avatar, bio, isProfileComplete } = req.body;
+    const { name, phone, email, whatsapp, category, address, avatar, bio, isProfileComplete, pricingList, hourlyRate, experience } = req.body;
     if (!name || !phone || !category) return res.status(400).json({ error: 'Missing required profile fields.' });
 
     const provider = await Provider.findOne({ id: req.params.id });
@@ -381,6 +386,9 @@ app.post('/api/providers/:id/profile', async (req, res) => {
     provider.avatar = avatar || provider.avatar;
     provider.bio = bio || provider.bio;
     if (isProfileComplete !== undefined) provider.isProfileComplete = isProfileComplete;
+    if (pricingList) provider.pricingList = pricingList;
+    if (hourlyRate !== undefined) provider.hourlyRate = hourlyRate;
+    if (experience !== undefined) provider.experience = experience;
 
     const formattedCategory = category.charAt(0).toUpperCase() + category.slice(1);
     if (!provider.skills.includes(formattedCategory)) {
@@ -404,7 +412,7 @@ app.post('/api/providers/:id/profile', async (req, res) => {
 // 10. Update Customer Profile metadata
 app.post('/api/users/:id/profile', async (req, res) => {
   try {
-    const { name, phone, society } = req.body;
+    const { name, phone, society, avatar } = req.body;
     if (!name || !phone) return res.status(400).json({ error: 'Missing required profile fields.' });
 
     const user = await User.findOne({ id: req.params.id });
@@ -413,10 +421,19 @@ app.post('/api/users/:id/profile', async (req, res) => {
     user.name = name;
     user.phone = phone;
     user.society = society || user.society;
+    if (avatar) user.avatar = avatar;
 
     await user.save();
+
+    // Propagate updates to bookings
+    await Booking.updateMany(
+      { customerId: req.params.id },
+      { $set: { customerName: name, customerPhone: phone } }
+    );
+
     res.json({ success: true, user });
   } catch (err) {
+    console.error('[API CLIENT PROFILE UPDATE ERROR]:', err);
     res.status(500).json({ error: 'Database error' });
   }
 });

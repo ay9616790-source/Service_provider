@@ -47,7 +47,7 @@ class CustomerExtension {
                 <span><i data-lucide="clock"></i> ${b.time}</span>
               </div>
               <div class="booking-services-badges">
-                ${b.servicesSelected.map(s => `<span class="booking-service-tag">${s.name} (₹${s.price})</span>`).join('')}
+                ${(b.servicesSelected || b.services || []).map(s => `<span class="booking-service-tag">${s.name} (₹${s.price})</span>`).join('')}
               </div>
               <div class="booking-price-breakdown-row mt-2" style="font-size: 0.8rem; color: var(--text-secondary); display: flex; gap: 0.5rem; flex-wrap: wrap; opacity: 0.85;">
                 <span>Subtotal: ₹${(b.subtotalPrice || (b.totalPrice - 5.00)).toFixed(2)}</span>
@@ -434,60 +434,7 @@ class CustomerExtension {
   }
 
   bindClientProfileEvents() {
-    const profileForm = document.getElementById('client-profile-form');
-    if (!profileForm) return;
-
-    profileForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-
-      const nameVal = document.getElementById('edit-client-name').value.trim();
-      const phoneVal = document.getElementById('edit-client-phone').value.trim();
-      const societyVal = document.getElementById('edit-client-society').value;
-
-      if (!nameVal || !phoneVal) {
-        this.showToast('Please fill in all mandatory fields.');
-        return;
-      }
-
-      if (!this.state.currentUser) return;
-
-      // 1. Update local state
-      const u = this.state.currentUser;
-      u.name = nameVal;
-      u.phone = phoneVal;
-      u.society = societyVal;
-
-      this.state.currentUserName = nameVal;
-      localStorage.setItem('servify_currentUser', JSON.stringify(u));
-      this.saveState();
-
-      // 2. Sync with Backend
-      try {
-        const response = await fetch(`${API_BASE_URL}/users/${u.id}/profile`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            name: nameVal,
-            phone: phoneVal,
-            society: societyVal
-          })
-        });
-
-        if (!response.ok) {
-          const err = await response.json();
-          throw new Error(err.error || 'Server error saving profile.');
-        }
-      } catch (err) {
-        console.warn('API connection error. Profile updated locally:', err);
-      }
-
-      // 3. Update Headers and Dashboard UI
-      this.updateAuthHeaders();
-      const clientDashboardName = document.getElementById('client-dashboard-name');
-      if (clientDashboardName) clientDashboardName.textContent = nameVal;
-      
-      this.showToast('Profile updated successfully!');
-    });
+    // Obsolete static profile form removed in favor of LeetCode modal
   }
 
 

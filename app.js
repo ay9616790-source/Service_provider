@@ -17,21 +17,43 @@ class ServifyApp {
       activeChatBookingId: null,
       theme: 'light',
       currentUser: null,
+      _currentUserId: 'c1',
       get currentUserId() {
-        if (!this.currentUser) return 'c1';
-        return this.currentUser.role === 'provider' ? (this.currentUser.providerId || 'p1') : (this.currentUser.id || 'c1');
+        if (this.currentUser) {
+          return this.currentUser.role === 'provider' ? (this.currentUser.providerId || 'p1') : (this.currentUser.id || 'c1');
+        }
+        return this._currentUserId;
       },
+      set currentUserId(val) {
+        this._currentUserId = val;
+      },
+      _currentUserRole: 'client',
       get currentUserRole() {
-        if (!this.currentUser) return 'client';
-        return this.currentUser.role === 'customer' ? 'client' : 'contractor';
+        if (this.currentUser) {
+          return this.currentUser.role === 'customer' ? 'client' : 'contractor';
+        }
+        return this._currentUserRole;
       },
+      set currentUserRole(val) {
+        this._currentUserRole = val;
+      },
+      _currentUserName: 'Abhishek K.',
       get currentUserName() {
-        if (!this.currentUser) return 'Abhishek K.';
-        return this.currentUser.name;
+        if (this.currentUser) return this.currentUser.name;
+        return this._currentUserName;
       },
+      set currentUserName(val) {
+        this._currentUserName = val;
+        if (this.currentUser) this.currentUser.name = val;
+      },
+      _currentUserAvatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&h=80&fit=crop&q=80',
       get currentUserAvatar() {
-        if (!this.currentUser) return 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&h=80&fit=crop&q=80';
-        return this.currentUser.avatar;
+        if (this.currentUser) return this.currentUser.avatar;
+        return this._currentUserAvatar;
+      },
+      set currentUserAvatar(val) {
+        this._currentUserAvatar = val;
+        if (this.currentUser) this.currentUser.avatar = val;
       }
     };
   }
@@ -51,6 +73,8 @@ class ServifyApp {
     this.bindProviderDashboardEvents();
     this.bindReviewEvents();
     this.bindAuthEvents();
+    this.bindProfileDropdownEvents();
+    this.bindProfileModalEvents();
 
     // 4. Perform Initial Renders
     this.renderLoginProviderCard();
@@ -419,10 +443,15 @@ class ServifyApp {
         this.showToast('Redirected: Partner Portal is restricted to Service Providers.');
         viewId = 'explore-view';
       }
+    } else if (viewId === 'profile-details-view') {
+      if (!this.state.currentUser) {
+        this.showToast('Please sign in to view your profile.');
+        viewId = 'auth-view';
+      }
     }
 
-    if (viewId === 'user-dashboard-view' || viewId === 'provider-dashboard-view' || viewId === 'explore-view') {
-      await this.loadDynamicData();
+    if (viewId === 'user-dashboard-view' || viewId === 'provider-dashboard-view' || viewId === 'explore-view' || viewId === 'profile-details-view') {
+      await this.loadState();
     }
 
     this.state.currentView = viewId;
@@ -454,11 +483,537 @@ class ServifyApp {
       this.renderChatContacts();
     } else if (viewId === 'provider-dashboard-view') {
       this.renderProviderDashboard();
+    } else if (viewId === 'profile-details-view') {
+      this.renderUserProfileDetailsView();
     }
 
     // Refresh icons on navigate
     if (window.lucide) {
       window.lucide.createIcons();
+    }
+  }
+
+  renderUserProfileDetailsView() {
+    if (!this.state.currentUser) return;
+    const u = this.state.currentUser;
+
+    // 1. Sidebar Left Card (scoped to user-detail- prefix to avoid conflicts with hidden public detail views)
+    const detailAvatar = document.getElementById('user-detail-avatar');
+    const detailName = document.getElementById('user-detail-name');
+    const detailRoleBadge = document.getElementById('user-detail-role-badge');
+    const detailLocation = document.getElementById('user-detail-location');
+    const detailMemberSince = document.getElementById('user-detail-member-since');
+
+    if (detailAvatar) detailAvatar.src = u.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&h=200&fit=crop&q=80';
+    if (detailName) detailName.textContent = u.name;
+    if (detailRoleBadge) {
+      detailRoleBadge.textContent = u.role === 'customer' ? 'Premium Client' : 'Verified Partner';
+    }
+    
+    // Member since year parsing
+    let joinedYear = '2026';
+    if (u.createdAt) {
+      try {
+        joinedYear = new Date(u.createdAt).getFullYear().toString();
+      } catch (e) {}
+    }
+    if (detailMemberSince) detailMemberSince.textContent = `Member since ${joinedYear}`;
+
+    // 2. Right Credentials Card
+    const fieldDetailName = document.getElementById('field-detail-name');
+    const fieldDetailEmail = document.getElementById('field-detail-email');
+    const fieldDetailPhone = document.getElementById('field-detail-phone');
+    
+    if (fieldDetailName) fieldDetailName.textContent = u.name;
+    if (fieldDetailEmail) fieldDetailEmail.textContent = u.email;
+    if (fieldDetailPhone) fieldDetailPhone.textContent = u.phone || 'Not Provided';
+
+    // Role specific display & variables
+    const providerSpecsCard = document.getElementById('provider-specs-card');
+    const societyFieldWrapper = document.getElementById('detail-field-society-wrapper');
+    const statRatingBlock = document.getElementById('stat-rating-block');
+
+    let userBookings = [];
+
+    if (u.role === 'customer') {
+      if (providerSpecsCard) providerSpecsCard.classList.add('hidden');
+      if (societyFieldWrapper) {
+        societyFieldWrapper.classList.remove('hidden');
+        const fieldDetailSociety = document.getElementById('field-detail-society');
+        if (fieldDetailSociety) fieldDetailSociety.textContent = u.society ? (u.society.charAt(0).toUpperCase() + u.society.slice(1)) : 'Gokuldham';
+      }
+      if (detailLocation) detailLocation.textContent = u.society ? (u.society.charAt(0).toUpperCase() + u.society.slice(1)) : 'Gokuldham';
+      if (statRatingBlock) statRatingBlock.classList.add('hidden');
+
+      // Bookings relating to this customer
+      userBookings = this.state.bookings.filter(b => b.customerId === u.id);
+    } else {
+      // Service Partner / Provider
+      if (providerSpecsCard) providerSpecsCard.classList.remove('hidden');
+      if (societyFieldWrapper) societyFieldWrapper.classList.add('hidden');
+      if (statRatingBlock) statRatingBlock.classList.remove('hidden');
+
+      const activeProvider = this.state.providers.find(p => p.id === u.providerId);
+      if (activeProvider) {
+        if (detailLocation) detailLocation.textContent = activeProvider.address || 'Service Area';
+        
+        const fieldDetailCategory = document.getElementById('field-detail-category');
+        const fieldDetailRate = document.getElementById('field-detail-rate');
+        const fieldDetailExperience = document.getElementById('field-detail-experience');
+        const fieldDetailTagline = document.getElementById('field-detail-tagline');
+        const fieldDetailBio = document.getElementById('field-detail-bio');
+
+        if (fieldDetailCategory) fieldDetailCategory.textContent = activeProvider.category;
+        if (fieldDetailRate) fieldDetailRate.textContent = `₹${activeProvider.hourlyRate} / hr`;
+        if (fieldDetailExperience) fieldDetailExperience.textContent = `${activeProvider.experience} Years`;
+        if (fieldDetailTagline) fieldDetailTagline.textContent = activeProvider.tagline || 'Certified professional';
+        if (fieldDetailBio) fieldDetailBio.textContent = activeProvider.bio || 'Professional offering quality service.';
+
+        // Populate rating blocks
+        const ratingVal = document.getElementById('stat-rating-val');
+        if (ratingVal) ratingVal.textContent = `${activeProvider.rating.toFixed(1)} / 5.0 (${activeProvider.reviewsCount} Reviews)`;
+      }
+
+      // Bookings relating to this provider
+      userBookings = this.state.bookings.filter(b => b.providerId === u.providerId);
+    }
+
+    // 3. Stats Blocks Values
+    const statTotal = document.getElementById('stat-total-bookings');
+    const statCompleted = document.getElementById('stat-completed-bookings');
+    const statPending = document.getElementById('stat-pending-bookings');
+
+    if (statTotal) statTotal.textContent = userBookings.length;
+    if (statCompleted) statCompleted.textContent = userBookings.filter(b => b.status === 'completed').length;
+    if (statPending) statPending.textContent = userBookings.filter(b => b.status === 'pending').length;
+
+    // 4. Wire Back Button Click Handler
+    const backBtn = document.getElementById('profile-back-btn');
+    if (backBtn) {
+      // Remove old listeners to avoid multiple binding bugs
+      const newBackBtn = backBtn.cloneNode(true);
+      backBtn.parentNode.replaceChild(newBackBtn, backBtn);
+      newBackBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        this.navigate(u.role === 'customer' ? 'user-dashboard-view' : 'provider-dashboard-view');
+      });
+    }
+
+    // 5. Wire Edit Modal triggers
+    const editBtn = document.getElementById('detail-edit-btn');
+    const avatarTrigger = document.getElementById('avatar-hover-trigger');
+
+    if (editBtn) {
+      editBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        this.openEditProfileModal();
+      });
+    }
+    if (avatarTrigger) {
+      avatarTrigger.addEventListener('click', (e) => {
+        e.preventDefault();
+        this.openEditProfileModal();
+      });
+    }
+
+    // Refresh icons on this view
+    if (window.lucide) {
+      window.lucide.createIcons();
+    }
+  }
+
+  openEditProfileModal() {
+    if (!this.state.currentUser) return;
+    const u = this.state.currentUser;
+
+    const modal = document.getElementById('edit-profile-modal');
+    if (!modal) return;
+
+    // Reset fields
+    const photoInput = document.getElementById('modal-photo-input');
+    if (photoInput) photoInput.value = '';
+
+    const nameInput = document.getElementById('modal-edit-name');
+    const phoneInput = document.getElementById('modal-edit-phone');
+    const photoPreview = document.getElementById('modal-photo-preview');
+
+    const customerFields = document.getElementById('modal-customer-fields');
+    const providerFields = document.getElementById('modal-provider-fields');
+
+    if (nameInput) nameInput.value = u.name || '';
+    if (phoneInput) phoneInput.value = u.phone || '';
+    if (photoPreview) photoPreview.src = u.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&h=200&fit=crop&q=80';
+
+    if (u.role === 'customer') {
+      if (customerFields) customerFields.classList.remove('hidden');
+      if (providerFields) providerFields.classList.add('hidden');
+
+      const societySelect = document.getElementById('modal-edit-society');
+      if (societySelect) societySelect.value = u.society || 'gokuldham';
+    } else {
+      if (customerFields) customerFields.classList.add('hidden');
+      if (providerFields) providerFields.classList.remove('hidden');
+
+      const activePro = this.state.providers.find(p => p.id === u.providerId);
+      if (activePro) {
+        if (nameInput) nameInput.value = activePro.name || '';
+        if (phoneInput) phoneInput.value = activePro.phone || '';
+        if (photoPreview) photoPreview.src = activePro.avatar || 'https://images.unsplash.com/photo-1540569014015-19a7be504e3a?w=200&h=200&fit=crop&q=80';
+
+        const categorySelect = document.getElementById('modal-edit-category');
+        const emailInput = document.getElementById('modal-edit-email');
+        const whatsappInput = document.getElementById('modal-edit-whatsapp');
+        const hourlyRateInput = document.getElementById('modal-edit-hourly-rate');
+        const taglineInput = document.getElementById('modal-edit-tagline');
+        const experienceInput = document.getElementById('modal-edit-experience');
+        const addressInput = document.getElementById('modal-edit-address');
+        const bioInput = document.getElementById('modal-edit-bio');
+
+        if (categorySelect) categorySelect.value = activePro.category || 'electrician';
+        if (emailInput) emailInput.value = activePro.email || u.email || '';
+        if (whatsappInput) whatsappInput.value = activePro.whatsapp || activePro.phone || '';
+        if (hourlyRateInput) hourlyRateInput.value = activePro.hourlyRate || 40;
+        if (taglineInput) taglineInput.value = activePro.tagline || '';
+        if (experienceInput) experienceInput.value = activePro.experience || 1;
+        if (addressInput) addressInput.value = activePro.address || '';
+        if (bioInput) bioInput.value = activePro.bio || '';
+
+        // Populate the dynamic custom pricing list
+        const ratesListInputs = document.getElementById('modal-rates-list-inputs');
+        if (ratesListInputs) {
+          if (activePro.pricingList && activePro.pricingList.length > 0) {
+            ratesListInputs.innerHTML = activePro.pricingList.map((srv, index) => `
+              <div class="modal-rate-input-row">
+                <span class="modal-rate-name">${srv.name}</span>
+                <div class="modal-rate-price-wrapper">
+                  <span>₹</span>
+                  <input type="number" class="form-input-small text-right modal-pricing-input" style="width: 80px; height: 1.8rem; padding: 0.2rem;" value="${srv.price}" data-index="${index}" min="0">
+                </div>
+              </div>
+            `).join('');
+          } else {
+            ratesListInputs.innerHTML = `<p class="text-muted text-center" style="font-size:0.8rem; margin:0; padding: 0.5rem 0;">No specific pricing items configured.</p>`;
+          }
+        }
+      }
+    }
+
+    modal.classList.remove('hidden');
+  }
+
+  closeEditProfileModal() {
+    const modal = document.getElementById('edit-profile-modal');
+    if (modal) modal.classList.add('hidden');
+  }
+
+  openProjectHistoryDetail(bookingId) {
+    const booking = this.state.bookings.find(b => b.id === bookingId);
+    if (!booking) return;
+
+    const modal = document.getElementById('project-history-detail-modal');
+    const body = document.getElementById('project-history-detail-body');
+    if (!modal || !body) return;
+
+    // Subtotal and splits
+    const subtotal = booking.subtotalPrice || (booking.totalPrice - 5.00);
+    const platformCommission = booking.platformCommission !== undefined ? booking.platformCommission : (subtotal * 0.15);
+    const workerPayout = booking.workerPayout !== undefined ? booking.workerPayout : (subtotal * 0.85);
+    const serviceFee = booking.serviceFee || 5.00;
+    const totalPrice = booking.totalPrice || (subtotal + serviceFee);
+
+    // Client details
+    const clientName = booking.customerName || 'Abhishek K.';
+    const clientPhone = booking.customerPhone || '9876543210';
+    const clientAddress = booking.customerAddress || 'Gokuldham Society, A-Block 302';
+    const paymentMethod = booking.paymentMethod || 'UPI Transfer (GPay)';
+    const txRef = booking.txRef || `TXN-${Math.floor(10000000 + Math.random() * 90000000)}`;
+
+    body.innerHTML = `
+      <div class="invoice-wrap">
+        <div class="invoice-header-block">
+          <div class="invoice-meta-info">
+            <h4>Invoice #${booking.id.toUpperCase()}</h4>
+            <p><strong>Engagement Date:</strong> ${booking.date} • ${booking.time}</p>
+            <p><strong>Status:</strong> <span class="badge-completed">Completed</span></p>
+          </div>
+          <div style="text-align: right;">
+            <h3 style="color: var(--primary); font-size: 1.5rem; font-weight: 800; margin: 0;">₹${totalPrice.toFixed(2)}</h3>
+            <p style="font-size: 0.8rem; color: var(--text-secondary); margin: 0;">Total Paid Amount</p>
+          </div>
+        </div>
+
+        <div class="invoice-client-card">
+          <h5 style="margin-top:0;">Client & Project Details</h5>
+          <div class="invoice-client-grid">
+            <span><strong>Client Name:</strong> ${clientName}</span>
+            <span><strong>Contact No:</strong> ${clientPhone}</span>
+            <span style="grid-column: span 2;"><strong>Service Address:</strong> ${clientAddress}</span>
+          </div>
+        </div>
+
+        <h5 style="font-size: 0.8rem; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 0.5rem;">Services Provided</h5>
+        <table class="invoice-table">
+          <thead>
+            <tr>
+              <th>Service Item</th>
+              <th style="text-align: right;">Price (₹)</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${(booking.servicesSelected || booking.services || []).map(srv => `
+              <tr>
+                <td>${srv.name}</td>
+                <td style="text-align: right; font-weight: 600;">₹${srv.price.toFixed(2)}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+
+        <div class="invoice-financials-summary">
+          <div class="financial-split-line">
+            <span>Gross Service Billings:</span>
+            <strong>₹${subtotal.toFixed(2)}</strong>
+          </div>
+          <div class="financial-split-line">
+            <span>Servify Platform Commission (15%):</span>
+            <strong style="color: var(--danger);">- ₹${platformCommission.toFixed(2)}</strong>
+          </div>
+          <div class="financial-split-line">
+            <span>Customer Platform Fee (Servify direct):</span>
+            <strong>₹${serviceFee.toFixed(2)}</strong>
+          </div>
+          <div class="financial-split-line bold payout">
+            <span>Net Partner Take-Home Payout (85%):</span>
+            <span>₹${workerPayout.toFixed(2)}</span>
+          </div>
+        </div>
+
+        <div class="invoice-payment-method-box">
+          <span>Payment Method: <strong>${paymentMethod}</strong></span>
+          <span>Transaction Ref: <code style="font-size: 0.85rem; font-weight: 700; color: var(--primary);">${txRef}</code></span>
+        </div>
+      </div>
+    `;
+
+    modal.classList.remove('hidden');
+  }
+
+  closeProjectHistoryModal() {
+    const modal = document.getElementById('project-history-detail-modal');
+    if (modal) modal.classList.add('hidden');
+  }
+
+  bindProfileModalEvents() {
+    const form = document.getElementById('edit-profile-form');
+    const photoInput = document.getElementById('modal-photo-input');
+    const photoPreview = document.getElementById('modal-photo-preview');
+
+    if (photoInput && photoPreview) {
+      photoInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const MAX_WIDTH = 400;
+            let scaleSize = 1;
+            if (img.width > MAX_WIDTH) {
+              scaleSize = MAX_WIDTH / img.width;
+            }
+            canvas.width = img.width * scaleSize;
+            canvas.height = img.height * scaleSize;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            const compressedBase64 = canvas.toDataURL('image/jpeg', 0.8);
+            photoPreview.src = compressedBase64;
+          };
+          img.src = event.target.result;
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    if (form) {
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (!this.state.currentUser) return;
+        const u = this.state.currentUser;
+
+        const nameVal = document.getElementById('modal-edit-name').value.trim();
+        const phoneVal = document.getElementById('modal-edit-phone').value.trim();
+        let avatarVal = photoPreview ? photoPreview.src : null;
+
+        if (!nameVal || !phoneVal) {
+          this.showToast('Please fill in all mandatory fields.');
+          return;
+        }
+
+        if (u.role === 'customer') {
+          const societyVal = document.getElementById('modal-edit-society').value;
+
+          u.name = nameVal;
+          u.phone = phoneVal;
+          u.society = societyVal;
+          if (avatarVal) u.avatar = avatarVal;
+
+          this.state.currentUserName = nameVal;
+          this.state.currentUserAvatar = avatarVal || this.state.currentUserAvatar;
+          
+          localStorage.setItem('servify_currentUser', JSON.stringify(u));
+          this.saveState();
+
+          // Sync with Server
+          try {
+            const res = await fetch(`${API_BASE_URL}/users/${u.id}/profile`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                name: nameVal,
+                phone: phoneVal,
+                society: societyVal,
+                avatar: avatarVal
+              })
+            });
+            if (!res.ok) throw new Error('API save failed');
+            const data = await res.json();
+            if (data.success && data.user) {
+              this.state.currentUser = data.user;
+              localStorage.setItem('servify_currentUser', JSON.stringify(data.user));
+              this.saveState();
+            }
+          } catch (err) {
+            console.warn('Backend API connection failed, saved locally:', err);
+          }
+        } else {
+          // Service Partner / Provider
+          const categoryVal = document.getElementById('modal-edit-category').value;
+          const emailVal = document.getElementById('modal-edit-email').value.trim();
+          const whatsappVal = document.getElementById('modal-edit-whatsapp').value.trim();
+          const hourlyRateVal = parseFloat(document.getElementById('modal-edit-hourly-rate').value) || 40;
+          const taglineVal = document.getElementById('modal-edit-tagline').value.trim();
+          const experienceVal = parseInt(document.getElementById('modal-edit-experience').value) || 1;
+          const addressVal = document.getElementById('modal-edit-address').value.trim();
+          const bioVal = document.getElementById('modal-edit-bio').value.trim();
+
+          if (!taglineVal || !experienceVal || !addressVal || !bioVal || !emailVal || !whatsappVal) {
+            this.showToast('Please fill in all service partner fields.');
+            return;
+          }
+
+          // Gather custom rates
+          const activePro = this.state.providers.find(p => p.id === u.providerId);
+          let pricingList = [];
+          if (activePro && activePro.pricingList) {
+            pricingList = [...activePro.pricingList];
+            const priceInputs = document.querySelectorAll('.modal-pricing-input');
+            priceInputs.forEach(inp => {
+              const idx = parseInt(inp.getAttribute('data-index'));
+              const val = parseFloat(inp.value) || 0;
+              if (pricingList[idx]) {
+                pricingList[idx].price = val;
+              }
+            });
+          }
+
+          // Local Provider State Update
+          if (activePro) {
+            activePro.name = nameVal;
+            activePro.phone = phoneVal;
+            activePro.email = emailVal;
+            activePro.whatsapp = whatsappVal;
+            activePro.category = categoryVal;
+            activePro.tagline = taglineVal;
+            activePro.experience = experienceVal;
+            activePro.address = addressVal;
+            activePro.bio = bioVal;
+            activePro.hourlyRate = hourlyRateVal;
+            activePro.pricingList = pricingList;
+            if (avatarVal) activePro.avatar = avatarVal;
+
+            this.state.bookings.forEach(b => {
+              if (b.providerId === u.providerId) {
+                b.providerName = nameVal;
+                b.providerCategory = categoryVal;
+                if (avatarVal) b.providerAvatar = avatarVal;
+              }
+            });
+          }
+
+          u.name = nameVal;
+          u.phone = phoneVal;
+          if (avatarVal) u.avatar = avatarVal;
+
+          this.state.currentUserName = nameVal;
+          this.state.currentUserAvatar = avatarVal || this.state.currentUserAvatar;
+
+          localStorage.setItem('servify_currentUser', JSON.stringify(u));
+          this.saveState();
+
+          // Sync Provider details with Backend
+          try {
+            const providerRes = await fetch(`${API_BASE_URL}/providers/${u.providerId}/profile`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                name: nameVal,
+                phone: phoneVal,
+                email: emailVal,
+                whatsapp: whatsappVal,
+                category: categoryVal,
+                tagline: taglineVal,
+                experience: experienceVal,
+                address: addressVal,
+                bio: bioVal,
+                avatar: avatarVal,
+                isProfileComplete: true,
+                pricingList: pricingList,
+                hourlyRate: hourlyRateVal
+              })
+            });
+
+            const userRes = await fetch(`${API_BASE_URL}/users/${u.id}/profile`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                name: nameVal,
+                phone: phoneVal,
+                avatar: avatarVal
+              })
+            });
+
+            if (providerRes.ok && userRes.ok) {
+              const dataUser = await userRes.json();
+              const dataPro = await providerRes.json();
+              if (dataUser.success && dataUser.user) {
+                this.state.currentUser = dataUser.user;
+                localStorage.setItem('servify_currentUser', JSON.stringify(dataUser.user));
+              }
+              if (dataPro.success && dataPro.provider) {
+                const idx = this.state.providers.findIndex(p => p.id === u.providerId);
+                if (idx !== -1) {
+                  this.state.providers[idx] = dataPro.provider;
+                }
+              }
+              this.saveState();
+            }
+          } catch (err) {
+            console.warn('Backend API connection failed, saved locally:', err);
+          }
+        }
+
+        this.closeEditProfileModal();
+        this.showToast('Profile details updated successfully!');
+
+        // Hot reload all visual components
+        this.updateAuthHeaders();
+        this.renderUserProfileDetailsView();
+        this.renderUserBookings();
+        this.renderProviderDashboard();
+        this.renderFeaturedProviders();
+        this.updateExploreResults();
+      });
     }
   }
 
@@ -1415,6 +1970,56 @@ class ServifyApp {
     }
   }
 
+  bindProfileDropdownEvents() {
+    const badge = document.getElementById('header-user-badge');
+    const menu = document.getElementById('profile-floating-menu');
+    if (!badge || !menu) return;
+
+    badge.addEventListener('click', (e) => {
+      e.stopPropagation();
+      menu.classList.toggle('hidden');
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!menu.classList.contains('hidden')) {
+        const isClickInside = badge.contains(e.target) || menu.contains(e.target);
+        if (!isClickInside) {
+          menu.classList.add('hidden');
+        }
+      }
+    });
+
+    const btnDashboard = document.getElementById('menu-item-dashboard');
+    const btnProfile = document.getElementById('menu-item-profile');
+    const btnLogout = document.getElementById('menu-item-logout');
+
+    if (btnDashboard) {
+      btnDashboard.addEventListener('click', (e) => {
+        e.preventDefault();
+        menu.classList.add('hidden');
+        if (this.state.currentUser) {
+          this.navigate(this.state.currentUser.role === 'customer' ? 'user-dashboard-view' : 'provider-dashboard-view');
+        }
+      });
+    }
+
+    if (btnProfile) {
+      btnProfile.addEventListener('click', (e) => {
+        e.preventDefault();
+        menu.classList.add('hidden');
+        this.navigate('profile-details-view');
+      });
+    }
+
+    if (btnLogout) {
+      btnLogout.addEventListener('click', (e) => {
+        e.preventDefault();
+        menu.classList.add('hidden');
+        this.logout();
+      });
+    }
+  }
+
   updateAuthHeaders() {
     const userBadge = document.getElementById('header-user-badge');
     const loginBtn = document.getElementById('header-login-btn');
@@ -1435,6 +2040,16 @@ class ServifyApp {
       // Update badge elements
       if (avatarImg) avatarImg.src = u.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=80&h=80&fit=crop&q=80';
       if (usernameSpan) usernameSpan.textContent = u.name;
+      
+      // Update floating dropdown elements
+      const menuAvatar = document.getElementById('menu-avatar');
+      const menuUsername = document.getElementById('menu-username');
+      const menuRole = document.getElementById('menu-role');
+      if (menuAvatar) menuAvatar.src = u.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=80&h=80&fit=crop&q=80';
+      if (menuUsername) menuUsername.textContent = u.name;
+      if (menuRole) {
+        menuRole.textContent = u.role === 'customer' ? 'Premium Client' : 'Verified Partner';
+      }
       
       if (userBadge) userBadge.classList.remove('hidden');
       if (loginBtn) loginBtn.classList.add('hidden');
@@ -1741,7 +2356,7 @@ class ServifyApp {
           localStorage.setItem('servify_currentUser', JSON.stringify(data.user));
           
           // Re-fetch dynamic providers so the newly registered provider is in the local state
-          await this.loadDynamicData();
+          await this.loadState();
 
           this.updateAuthHeaders();
           this.showToast(`Account created! Welcome to Servify, ${data.user.name}!`);

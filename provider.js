@@ -76,33 +76,25 @@ class ProviderExtension {
     const acceptedJobs = proBookings.filter(b => b.status === 'accepted');
     const completedJobs = proBookings.filter(b => b.status === 'completed');
 
-    // Compute mock earnings
-    let baseGross = 1420.00;
-    let baseCommission = baseGross * 0.15; // 15% Servify cut
-    let baseNet = baseGross * 0.85;        // 85% Take-home
-
-    let grossAdded = 0;
-    let commissionAdded = 0;
-    let netAdded = 0;
+    // Compute purely dynamic earnings from completed database bookings
+    let finalGross = 0;
+    let finalCommission = 0;
+    let finalNet = 0;
 
     completedJobs.forEach(j => {
       const subtotal = j.subtotalPrice || (j.totalPrice - 5.00);
       const commission = j.platformCommission !== undefined ? j.platformCommission : (subtotal * 0.15);
       const net = j.workerPayout !== undefined ? j.workerPayout : (subtotal * 0.85);
 
-      grossAdded += subtotal;
-      commissionAdded += commission;
-      netAdded += net;
+      finalGross += subtotal;
+      finalCommission += commission;
+      finalNet += net;
     });
-
-    const finalGross = baseGross + grossAdded;
-    const finalCommission = baseCommission + commissionAdded;
-    const finalNet = baseNet + netAdded;
 
     if (netPayoutValue) netPayoutValue.textContent = `₹${finalNet.toFixed(2)}`;
     if (grossBillingsValue) grossBillingsValue.textContent = `₹${finalGross.toFixed(2)}`;
     if (commissionDeductedValue) commissionDeductedValue.textContent = `₹${finalCommission.toFixed(2)}`;
-    if (completedCountValue) completedCountValue.textContent = 12 + completedJobs.length;
+    if (completedCountValue) completedCountValue.textContent = completedJobs.length.toString();
 
     // 1. Render Pending Requests
     if (pendingRequests.length === 0) {
@@ -125,7 +117,7 @@ class ProviderExtension {
               </div>
             </div>
             <div class="job-req-details mb-4">
-              <span><strong>Services:</strong> ${req.servicesSelected.map(s => s.name).join(', ')}</span>
+              <span><strong>Services:</strong> ${(req.servicesSelected || req.services || []).map(s => s.name).join(', ')}</span>
               <span><strong>Schedule:</strong> ${req.date} at ${req.time}</span>
               <div style="margin-top: 0.75rem; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
                 <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary);">Confirm/Edit Price (₹):</label>
@@ -166,7 +158,7 @@ class ProviderExtension {
               <span class="mo">${month}</span>
             </div>
             <div class="schedule-details">
-              <h4>${job.servicesSelected.map(s => s.name).join(', ')}</h4>
+              <h4>${(job.servicesSelected || job.services || []).map(s => s.name).join(', ')}</h4>
               <p>Client: Abhishek K. • ${job.time} • <strong style="color: var(--success);">Payout: ₹${payout.toFixed(2)}</strong></p>
             </div>
             <div>
@@ -177,9 +169,43 @@ class ProviderExtension {
       }).join('');
     }
 
-    // 3. Render Custom Rates Editor (for provider id 'p1' Alex Mercer)
-    if (alexMercer) {
-      ratesContainer.innerHTML = alexMercer.pricingList.map((srv, index) => `
+    // 2.5 Render Completed Projects & Client History Card (Last 5 jobs)
+    const historyContainer = document.getElementById('provider-history-container');
+    if (historyContainer) {
+      if (completedJobs.length === 0) {
+        historyContainer.innerHTML = `<p class="text-muted text-center py-4" style="margin: 0;">No completed projects in history yet.</p>`;
+      } else {
+        const sortedHistory = [...completedJobs]
+          .sort((a, b) => new Date(b.date) - new Date(a.date))
+          .slice(0, 5);
+
+        historyContainer.innerHTML = sortedHistory.map(job => {
+          const subtotal = job.subtotalPrice || (job.totalPrice - 5.00);
+          const clientName = job.customerName || 'Abhishek K.';
+          const categoryIcon = this.getCategoryIcon ? this.getCategoryIcon(job.providerCategory || 'electrician') : '🛠️';
+          
+          return `
+            <div class="history-item-row" onclick="app.openProjectHistoryDetail('${job.id}')">
+              <div class="history-item-left">
+                <div class="history-item-icon">${categoryIcon}</div>
+                <div class="history-item-info">
+                  <h4>Client: ${clientName}</h4>
+                  <p>${(job.servicesSelected || job.services || []).map(s => s.name).join(', ')} • ${job.date}</p>
+                </div>
+              </div>
+              <div class="history-item-right">
+                <span class="history-item-price">₹${subtotal.toFixed(2)}</span>
+                <span class="badge-completed">Completed</span>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+    }
+
+    // 3. Render Custom Rates Editor if ratesContainer exists
+    if (ratesContainer && activeProvider) {
+      ratesContainer.innerHTML = activeProvider.pricingList.map((srv, index) => `
         <div class="rate-edit-row">
           <span class="rate-edit-name">${srv.name}</span>
           <div class="rate-edit-input-wrapper">
@@ -189,6 +215,60 @@ class ProviderExtension {
         </div>
       `).join('');
     }
+
+    // 4. Render Earnings Analysis Chart dynamically
+    this.renderProviderEarningsChart(completedJobs);
+  }
+
+  renderProviderEarningsChart(completedJobs) {
+    const chartBarsContainer = document.getElementById('provider-earnings-chart-bars');
+    if (!chartBarsContainer) return;
+
+    // Initialize monthly gross revenues for Jan, Feb, Mar, Apr, May, Jun to zero
+    const monthlyRevenues = {
+      'Jan': 0,
+      'Feb': 0,
+      'Mar': 0,
+      'Apr': 0,
+      'May': 0,
+      'Jun': 0
+    };
+
+    completedJobs.forEach(job => {
+      try {
+        const dateObj = new Date(job.date);
+        const monthName = dateObj.toLocaleString('en-US', { month: 'short' });
+        if (monthlyRevenues[monthName] !== undefined) {
+          const subtotal = job.subtotalPrice || (job.totalPrice - 5.00);
+          monthlyRevenues[monthName] += subtotal;
+        }
+      } catch (e) {
+        console.warn('Error parsing job date for earnings chart:', e);
+      }
+    });
+
+    // Find the max monthly revenue to scale the height of CSS bars (max height 95%)
+    let maxRevenue = 0;
+    Object.values(monthlyRevenues).forEach(val => {
+      if (val > maxRevenue) maxRevenue = val;
+    });
+
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+    chartBarsContainer.innerHTML = months.map(m => {
+      const revenue = monthlyRevenues[m];
+      let barHeight = 0;
+      if (maxRevenue > 0) {
+        barHeight = (revenue / maxRevenue) * 95;
+      }
+      
+      return `
+        <div class="chart-bar-col">
+          <div style="font-size: 0.7rem; font-weight: 700; color: var(--text-secondary); margin-bottom: 0.25rem;">₹${revenue.toFixed(0)}</div>
+          <div class="bar-fill" style="height: ${barHeight}%; transition: height 0.5s ease-out;"></div>
+          <span>${m}</span>
+        </div>
+      `;
+    }).join('');
   }
 
   async acceptJobRequest(bookingId) {
@@ -431,123 +511,6 @@ class ProviderExtension {
         }
       }
     });
-
-    const editPhotoInput = document.getElementById('edit-pro-avatar');
-    const editPhotoPreview = document.getElementById('edit-pro-photo-preview');
-    if (editPhotoInput && editPhotoPreview) {
-      editPhotoInput.addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          const img = new Image();
-          img.onload = () => {
-            const canvas = document.createElement('canvas');
-            const MAX_WIDTH = 400;
-            let scaleSize = 1;
-            if (img.width > MAX_WIDTH) {
-                scaleSize = MAX_WIDTH / img.width;
-            }
-            canvas.width = img.width * scaleSize;
-            canvas.height = img.height * scaleSize;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-            const compressedBase64 = canvas.toDataURL('image/jpeg', 0.8);
-            editPhotoPreview.src = compressedBase64;
-            editPhotoPreview.style.display = 'block';
-          };
-          img.src = event.target.result;
-        };
-        reader.readAsDataURL(file);
-      });
-    }
-
-    // Bind profile update form submission
-    const profileForm = document.getElementById('provider-profile-form');
-    if (profileForm) {
-      profileForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-
-        const nameVal = document.getElementById('edit-pro-name').value.trim();
-        const phoneVal = document.getElementById('edit-pro-phone').value.trim();
-        const taglineVal = document.getElementById('edit-pro-tagline').value.trim();
-        const bioVal = document.getElementById('edit-pro-bio').value.trim();
-        const editPhotoPreview = document.getElementById('edit-pro-photo-preview');
-        let avatarVal = null;
-        if (editPhotoPreview && editPhotoPreview.src && editPhotoPreview.style.display !== 'none') {
-            avatarVal = editPhotoPreview.src;
-        }
-
-        if (!nameVal || !phoneVal || !taglineVal || !bioVal) {
-          this.showToast('Please fill in all profile fields.');
-          return;
-        }
-
-        const providerId = (this.state.currentUser && this.state.currentUser.providerId) || 'p1';
-
-        // 1. Update local state
-        const activePro = this.state.providers.find(p => p.id === providerId);
-        if (activePro) {
-          activePro.name = nameVal;
-          activePro.phone = phoneVal;
-          activePro.tagline = taglineVal;
-          activePro.bio = bioVal;
-          if (avatarVal) activePro.avatar = avatarVal;
-
-          // Sync with customer bookings locally
-          this.state.bookings.forEach(b => {
-            if (b.providerId === providerId) {
-              b.providerName = nameVal;
-              if (avatarVal) b.providerAvatar = avatarVal;
-            }
-          });
-
-          this.saveState();
-        }
-
-        // 2. Sync changes back to server database
-        try {
-          const response = await fetch(`${API_BASE_URL}/providers/${providerId}/profile`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              name: nameVal,
-              phone: phoneVal,
-              tagline: taglineVal,
-              bio: bioVal,
-              ...(avatarVal && { avatar: avatarVal })
-            })
-          });
-
-          if (!response.ok) {
-            const err = await response.json();
-            throw new Error(err.error || 'Server error saving profile.');
-          }
-
-          const resData = await response.json();
-          if (resData.success && resData.provider) {
-            // Update local memory state with details returned from backend
-            const updatedPro = resData.provider;
-            const idx = this.state.providers.findIndex(p => p.id === providerId);
-            if (idx !== -1) {
-              this.state.providers[idx] = updatedPro;
-            }
-            this.saveState();
-          }
-        } catch (err) {
-          console.warn('API connection error. Profile updated locally offline:', err);
-        }
-
-        // 3. Show confirmation feedback and refresh views
-        this.showToast('Profile info updated successfully!');
-        
-        // Re-render dashboards and search results to propagate names/taglines
-        this.renderProviderDashboard();
-        this.renderFeaturedProviders();
-        this.updateExploreResults();
-        this.renderUserBookings();
-      });
-    }
   }
 
 }
