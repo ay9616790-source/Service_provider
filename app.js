@@ -1704,15 +1704,6 @@ class ServifyApp {
         return;
       }
 
-      if (role === 'provider') {
-        if (!providerHourlyRate || !providerTagline || !providerBio) {
-          if (errorAlert && errorText) {
-            errorText.textContent = 'Please fill in all service provider fields marked with a star (*).';
-            errorAlert.classList.remove('hidden');
-          }
-          return;
-        }
-      }
 
       try {
         const response = await fetch(`${API_BASE_URL}/auth/register`, {
