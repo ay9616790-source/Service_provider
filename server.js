@@ -401,6 +401,26 @@ app.post('/api/providers/:id/profile', async (req, res) => {
   }
 });
 
+// 10. Update Customer Profile metadata
+app.post('/api/users/:id/profile', async (req, res) => {
+  try {
+    const { name, phone, society } = req.body;
+    if (!name || !phone) return res.status(400).json({ error: 'Missing required profile fields.' });
+
+    const user = await User.findOne({ id: req.params.id });
+    if (!user) return res.status(404).json({ error: 'User not found.' });
+
+    user.name = name;
+    user.phone = phone;
+    user.society = society || user.society;
+
+    await user.save();
+    res.json({ success: true, user });
+  } catch (err) {
+    res.status(500).json({ error: 'Database error' });
+  }
+});
+
 // --- AUTHENTICATION ENDPOINTS ---
 
 app.post('/api/auth/register', async (req, res) => {
@@ -426,7 +446,7 @@ app.post('/api/auth/register', async (req, res) => {
         reviewsCount: 0,
         experience: parseInt(providerExperience) || 1,
         hourlyRate: parseInt(providerHourlyRate) || 40,
-        avatar: providerAvatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&h=200&fit=crop&q=80',
+        avatar: providerAvatar || 'servify_default.png',
         banner: 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=800&h=300&fit=crop&q=80',
         tagline: providerTagline || `Certified professional`,
         isVerified: false,
@@ -450,7 +470,7 @@ app.post('/api/auth/register', async (req, res) => {
       phone: phone || '',
       society: society || 'gokuldham',
       avatar: role === 'provider' 
-        ? 'https://images.unsplash.com/photo-1540569014015-19a7be504e3a?w=200&h=200&fit=crop&q=80'
+        ? 'servify_default.png'
         : 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&h=200&fit=crop&q=80',
       providerId: providerId
     });

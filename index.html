@@ -502,7 +502,7 @@
                 </div>
                 <div class="price-calc-row">
                   <span>Service Fee:</span>
-                  <span>₹5.00</span>
+                  <span>₹<span id="booking-service-fee">5.00</span></span>
                 </div>
                 <hr class="price-divider">
                 <div class="price-calc-row total-row">
@@ -532,6 +532,7 @@
           <button class="tab-btn active" data-tab="client-explore-tab">Explore Services</button>
           <button class="tab-btn" data-tab="bookings-tab">My Bookings</button>
           <button class="tab-btn" data-tab="chat-tab" id="user-chat-tab-trigger">Direct Messages <span class="badge badge-pulse" id="unread-dot"></span></button>
+          <button class="tab-btn" data-tab="client-profile-tab" id="user-profile-tab-trigger">Edit Profile</button>
         </div>
 
         <!-- TAB CONTENT: EXPLORE SERVICES -->
@@ -577,6 +578,35 @@
                 <button class="btn btn-primary" id="chat-send-btn"><i data-lucide="send"></i></button>
               </div>
             </div>
+          </div>
+        </div>
+        
+        <!-- TAB CONTENT: EDIT CLIENT PROFILE -->
+        <div id="client-profile-tab" class="dashboard-tab-content">
+          <div style="max-width: 500px; margin: 1.5rem auto; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 1.25rem; padding: 2rem; box-shadow: var(--card-shadow);">
+            <h3 style="font-size: 1.35rem; margin-bottom: 0.5rem; font-family: 'Outfit', sans-serif;">Update My Details</h3>
+            <p class="text-muted" style="font-size: 0.85rem; margin-bottom: 1.5rem;">Manage your customer profile name, phone number, and society location</p>
+            
+            <form id="client-profile-form">
+              <div class="form-group" style="margin-bottom: 1.25rem;">
+                <label for="edit-client-name" class="input-label-small" style="font-weight: 600; display: block; margin-bottom: 0.25rem;">Full Name <span style="color: #ef4444; font-weight: bold;">*</span></label>
+                <input type="text" id="edit-client-name" class="form-input-small" style="width: 100%;" required>
+              </div>
+              <div class="form-group" style="margin-bottom: 1.25rem;">
+                <label for="edit-client-phone" class="input-label-small" style="font-weight: 600; display: block; margin-bottom: 0.25rem;">Contact Number <span style="color: #ef4444; font-weight: bold;">*</span></label>
+                <input type="text" id="edit-client-phone" class="form-input-small" style="width: 100%;" required>
+              </div>
+              <div class="form-group" style="margin-bottom: 1.5rem;">
+                <label for="edit-client-society" class="input-label-small" style="font-weight: 600; display: block; margin-bottom: 0.25rem;">Home Society Location</label>
+                <select id="edit-client-society" class="form-input-small" style="width: 100%;">
+                  <option value="gokuldham">Gokuldham Society</option>
+                  <option value="shanti_kunj">Shanti Kunj Heights</option>
+                  <option value="green_valley">Green Valley Apartments</option>
+                  <option value="royal_palms">Royal Palms Residency</option>
+                </select>
+              </div>
+              <button type="submit" class="btn btn-primary btn-full">Save Changes</button>
+            </form>
           </div>
         </div>
       </div>

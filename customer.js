@@ -5,6 +5,18 @@ class CustomerExtension {
     const container = document.getElementById('user-bookings-container');
     if (!container) return;
 
+    // Pre-populate Edit Profile form if we have logged-in user
+    if (this.state.currentUser && this.state.currentUser.role === 'customer') {
+      const u = this.state.currentUser;
+      const nameInput = document.getElementById('edit-client-name');
+      const phoneInput = document.getElementById('edit-client-phone');
+      const societyInput = document.getElementById('edit-client-society');
+
+      if (nameInput && document.activeElement !== nameInput) nameInput.value = u.name || '';
+      if (phoneInput && document.activeElement !== phoneInput) phoneInput.value = u.phone || '';
+      if (societyInput) societyInput.value = u.society || 'gokuldham';
+    }
+
     if (this.state.bookings.length === 0) {
       container.innerHTML = `
         <div class="chat-empty-state">
@@ -419,6 +431,63 @@ class CustomerExtension {
 
       this.showToast(`New message from ${booking.providerName}`);
     }, 2000);
+  }
+
+  bindClientProfileEvents() {
+    const profileForm = document.getElementById('client-profile-form');
+    if (!profileForm) return;
+
+    profileForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const nameVal = document.getElementById('edit-client-name').value.trim();
+      const phoneVal = document.getElementById('edit-client-phone').value.trim();
+      const societyVal = document.getElementById('edit-client-society').value;
+
+      if (!nameVal || !phoneVal) {
+        this.showToast('Please fill in all mandatory fields.');
+        return;
+      }
+
+      if (!this.state.currentUser) return;
+
+      // 1. Update local state
+      const u = this.state.currentUser;
+      u.name = nameVal;
+      u.phone = phoneVal;
+      u.society = societyVal;
+
+      this.state.currentUserName = nameVal;
+      localStorage.setItem('servify_currentUser', JSON.stringify(u));
+      this.saveState();
+
+      // 2. Sync with Backend
+      try {
+        const response = await fetch(`${API_BASE_URL}/users/${u.id}/profile`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: nameVal,
+            phone: phoneVal,
+            society: societyVal
+          })
+        });
+
+        if (!response.ok) {
+          const err = await response.json();
+          throw new Error(err.error || 'Server error saving profile.');
+        }
+      } catch (err) {
+        console.warn('API connection error. Profile updated locally:', err);
+      }
+
+      // 3. Update Headers and Dashboard UI
+      this.updateAuthHeaders();
+      const clientDashboardName = document.getElementById('client-dashboard-name');
+      if (clientDashboardName) clientDashboardName.textContent = nameVal;
+      
+      this.showToast('Profile updated successfully!');
+    });
   }
 
 
