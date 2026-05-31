@@ -9,7 +9,8 @@ const UserSchema = new mongoose.Schema({
   phone: String,
   society: String,
   avatar: String,
-  providerId: String
+  providerId: String,
+  isPhoneVerified: { type: Boolean, default: false }
 }, { timestamps: true });
 
 const CategorySchema = new mongoose.Schema({

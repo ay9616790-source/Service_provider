@@ -318,11 +318,37 @@ class ServifyApp {
       this.renderChatContacts();
     } else if (viewId === 'provider-dashboard-view') {
       this.renderProviderDashboard();
+    } else if (viewId === 'profile-view') {
+      this.populateProfileForm();
     }
 
     // Refresh icons on navigate
     if (window.lucide) {
       window.lucide.createIcons();
+    }
+  }
+
+  populateProfileForm() {
+    if (!this.state.currentUser) return;
+    const user = this.state.currentUser;
+    document.getElementById('profile-view-name').value = user.name || '';
+    document.getElementById('profile-view-phone').value = user.phone || '';
+    document.getElementById('profile-view-society').value = user.society || 'gokuldham';
+    document.getElementById('profile-view-avatar').value = user.avatar || '';
+    
+    const avatarPreview = document.getElementById('profile-view-avatar-preview');
+    if (avatarPreview && user.avatar) {
+      avatarPreview.src = user.avatar;
+    }
+
+    const badge = document.getElementById('profile-view-verified-badge');
+    const verifyBtn = document.getElementById('profile-view-verify-btn');
+    if (user.isPhoneVerified) {
+      badge.classList.remove('hidden');
+      verifyBtn.classList.add('hidden');
+    } else {
+      badge.classList.add('hidden');
+      verifyBtn.classList.remove('hidden');
     }
   }
 
@@ -1338,6 +1364,17 @@ class ServifyApp {
           throw new Error('Email is already registered.');
         }
 
+        // OTP Verification
+        let isPhoneVerified = false;
+        if (phone) {
+          try {
+            await this.triggerOtpVerification(phone);
+            isPhoneVerified = true;
+          } catch (e) {
+            return; // Cancelled
+          }
+        }
+
         const userId = 'u_' + Date.now();
         let providerId = null;
         let providerProfile = null;
@@ -1386,7 +1423,8 @@ class ServifyApp {
           avatar: role === 'provider'
             ? 'https://images.unsplash.com/photo-1540569014015-19a7be504e3a?w=200&h=200&fit=crop&q=80'
             : 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&h=200&fit=crop&q=80',
-          providerId: providerId
+          providerId: providerId,
+          isPhoneVerified: isPhoneVerified
         };
 
         const userRes = await fetch(`${API_BASE_URL}/users`, {
@@ -1522,6 +1560,110 @@ class ServifyApp {
       this.state.bookings = await bookingsRes.json();
     } catch (err) {
       console.warn('Error reloading dynamic providers/bookings:', err);
+    }
+  }
+
+  // --- OTP & PROFILE LOGIC ---
+
+  triggerOtpVerification(phone) {
+    return new Promise((resolve, reject) => {
+      const modal = document.getElementById('otp-modal');
+      const input = document.getElementById('otp-input');
+      const errorText = document.getElementById('otp-error-text');
+      const verifyBtn = document.getElementById('otp-verify-btn');
+      const cancelBtn = document.getElementById('otp-cancel-btn');
+      
+      modal.classList.remove('hidden');
+      input.value = '';
+      errorText.classList.add('hidden');
+      
+      const handleVerify = () => {
+        if (input.value === '1234') {
+          cleanup();
+          resolve(true);
+        } else {
+          errorText.textContent = 'Invalid OTP. Hint: 1234';
+          errorText.classList.remove('hidden');
+        }
+      };
+
+      const handleCancel = () => {
+        cleanup();
+        reject(new Error('OTP Verification cancelled.'));
+      };
+      
+      const cleanup = () => {
+        modal.classList.add('hidden');
+        verifyBtn.removeEventListener('click', handleVerify);
+        cancelBtn.removeEventListener('click', handleCancel);
+      };
+
+      verifyBtn.addEventListener('click', handleVerify);
+      cancelBtn.addEventListener('click', handleCancel);
+    });
+  }
+
+  async triggerProfileOtpVerification() {
+    const phone = document.getElementById('profile-view-phone').value;
+    if (!phone) {
+      this.showToast('Please enter a phone number first.');
+      return;
+    }
+    try {
+      await this.triggerOtpVerification(phone);
+      // Success, update backend
+      const user = this.state.currentUser;
+      const response = await fetch(`${API_BASE_URL}/users/${user.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isPhoneVerified: true })
+      });
+      if(response.ok) {
+        user.isPhoneVerified = true;
+        localStorage.setItem('servify_currentUser', JSON.stringify(user));
+        this.populateProfileForm();
+        this.showToast('Phone number verified successfully!');
+      }
+    } catch(e) {
+      // Cancelled
+    }
+  }
+
+  async handleProfileUpdate(e) {
+    e.preventDefault();
+    if(!this.state.currentUser) return;
+    const user = this.state.currentUser;
+    
+    const name = document.getElementById('profile-view-name').value.trim();
+    const phone = document.getElementById('profile-view-phone').value.trim();
+    const society = document.getElementById('profile-view-society').value;
+    const avatar = document.getElementById('profile-view-avatar').value.trim();
+
+    let isPhoneVerified = user.isPhoneVerified;
+    if (user.phone !== phone) {
+      isPhoneVerified = false;
+    }
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/users/${user.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, phone, society, avatar, isPhoneVerified })
+      });
+      if(response.ok) {
+        user.name = name;
+        user.phone = phone;
+        user.society = society;
+        if (avatar) user.avatar = avatar;
+        user.isPhoneVerified = isPhoneVerified;
+        localStorage.setItem('servify_currentUser', JSON.stringify(user));
+        this.populateProfileForm();
+        this.updateAuthHeaders();
+        this.showToast('Profile updated successfully!');
+      }
+    } catch(err) {
+      console.error(err);
+      this.showToast('Failed to update profile.');
     }
   }
 }
