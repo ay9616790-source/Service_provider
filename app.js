@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://localhost:5000/api';
+const API_BASE_URL = `http://${window.location.hostname || 'localhost'}:5000/api`;
 
 // Servify Core Application State Manager
 class ServifyApp {
@@ -553,7 +553,7 @@ class ServifyApp {
         <h3 class="service-home-title">${srv.name}</h3>
         <div class="service-home-footer">
           <span class="service-home-lbl">Starting from</span>
-          <strong class="service-home-price">$${srv.minPrice}</strong>
+          <strong class="service-home-price">₹${srv.minPrice}</strong>
         </div>
       </div>
     `).join('');
@@ -603,7 +603,7 @@ class ServifyApp {
           <p class="provider-card-tagline">${pro.tagline}</p>
           
           <div class="provider-card-footer">
-            <span class="provider-card-price"><span class="price-value-bold">$${pro.hourlyRate}</span>/hr</span>
+            <span class="provider-card-price"><span class="price-value-bold">₹${pro.hourlyRate}</span>/hr</span>
             <button class="btn btn-primary btn-small" onclick="app.viewProviderDetail('${pro.id}')">View Profile</button>
           </div>
         </div>
@@ -787,7 +787,7 @@ class ServifyApp {
             <div style="flex-grow: 1;">
               <div style="display: flex; justify-content: space-between; align-items: center;">
                 <h4 style="font-size: 1.15rem; margin: 0; font-weight: 700; color: var(--text-primary);">${pro.name}</h4>
-                <span style="font-weight: 700; color: var(--primary); font-size: 1.1rem;">$${pro.hourlyRate}/hr</span>
+                <span style="font-weight: 700; color: var(--primary); font-size: 1.1rem;">₹${pro.hourlyRate}/hr</span>
               </div>
               <p class="text-muted" style="font-size: 0.85rem; margin: 0.15rem 0;">${pro.tagline}</p>
               <div style="display: flex; gap: 0.75rem; font-size: 0.8rem; font-weight: 600; margin-top: 0.25rem;">
@@ -1069,7 +1069,7 @@ class ServifyApp {
               ${pro.isVerified ? `<span class="badge badge-verified"><i data-lucide="shield-check"></i> Verified</span>` : ''}
             </span>
             <div class="list-card-price-info">
-              <span class="provider-card-price"><span class="price-value-bold">$${pro.hourlyRate}</span>/hr</span>
+              <span class="provider-card-price"><span class="price-value-bold">₹${pro.hourlyRate}</span>/hr</span>
             </div>
           </div>
           <span class="provider-card-category">${this.getCategoryIcon(pro.category)} ${pro.category}</span>
@@ -1205,7 +1205,7 @@ class ServifyApp {
         <input type="checkbox" name="booking-service-item" value="${srv.id}" data-price="${srv.price}" data-name="${srv.name}">
         <div class="service-check-details">
           <span class="service-check-name">${srv.name}</span>
-          <span class="service-check-price">$${srv.price}</span>
+          <span class="service-check-price">₹${srv.price}</span>
         </div>
       </label>
     `).join('');

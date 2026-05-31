@@ -35,14 +35,14 @@ class CustomerExtension {
                 <span><i data-lucide="clock"></i> ${b.time}</span>
               </div>
               <div class="booking-services-badges">
-                ${b.servicesSelected.map(s => `<span class="booking-service-tag">${s.name} ($${s.price})</span>`).join('')}
+                ${b.servicesSelected.map(s => `<span class="booking-service-tag">${s.name} (₹${s.price})</span>`).join('')}
               </div>
               <div class="booking-price-breakdown-row mt-2" style="font-size: 0.8rem; color: var(--text-secondary); display: flex; gap: 0.5rem; flex-wrap: wrap; opacity: 0.85;">
-                <span>Subtotal: $${(b.subtotalPrice || (b.totalPrice - 5.00)).toFixed(2)}</span>
+                <span>Subtotal: ₹${(b.subtotalPrice || (b.totalPrice - 5.00)).toFixed(2)}</span>
                 <span>•</span>
-                <span>Platform Fee: $${(b.serviceFee || 5.00).toFixed(2)}</span>
+                <span>Platform Fee: ₹${(b.serviceFee || 5.00).toFixed(2)}</span>
                 <span>•</span>
-                <strong style="color: var(--text-primary);">Total: $${b.totalPrice.toFixed(2)}</strong>
+                <strong style="color: var(--text-primary);">Total: ₹${b.totalPrice.toFixed(2)}</strong>
               </div>
             </div>
           </div>
@@ -50,7 +50,7 @@ class CustomerExtension {
           <div class="booking-item-right">
             <span class="badge ${badgeClass}">${b.status}</span>
             <div class="text-right">
-              <span class="booking-price-tag">$${b.totalPrice.toFixed(2)}</span>
+              <span class="booking-price-tag">₹${b.totalPrice.toFixed(2)}</span>
               <div class="booking-actions-row">
                 <button class="btn btn-secondary btn-small" onclick="app.openChatFromBooking('${b.id}')"><i data-lucide="message-square"></i> Chat</button>
                 ${b.status === 'pending' ? `

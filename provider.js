@@ -99,9 +99,9 @@ class ProviderExtension {
     const finalCommission = baseCommission + commissionAdded;
     const finalNet = baseNet + netAdded;
 
-    if (netPayoutValue) netPayoutValue.textContent = `$${finalNet.toFixed(2)}`;
-    if (grossBillingsValue) grossBillingsValue.textContent = `$${finalGross.toFixed(2)}`;
-    if (commissionDeductedValue) commissionDeductedValue.textContent = `$${finalCommission.toFixed(2)}`;
+    if (netPayoutValue) netPayoutValue.textContent = `₹${finalNet.toFixed(2)}`;
+    if (grossBillingsValue) grossBillingsValue.textContent = `₹${finalGross.toFixed(2)}`;
+    if (commissionDeductedValue) commissionDeductedValue.textContent = `₹${finalCommission.toFixed(2)}`;
     if (completedCountValue) completedCountValue.textContent = 12 + completedJobs.length;
 
     // 1. Render Pending Requests
@@ -118,9 +118,9 @@ class ProviderExtension {
             <div class="job-req-header" style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem;">
               <span class="job-req-client" style="font-weight: 600;">Client: Abhishek K.</span>
               <div class="text-right">
-                <span class="job-req-price" id="total-${req.id}" style="font-size: 1.15rem; font-weight: 700; color: var(--primary);">$${req.totalPrice.toFixed(2)}</span>
+                <span class="job-req-price" id="total-${req.id}" style="font-size: 1.15rem; font-weight: 700; color: var(--primary);">₹${req.totalPrice.toFixed(2)}</span>
                 <div class="provider-split-info" style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.15rem;">
-                  Payout: <span id="payout-${req.id}">$${payout.toFixed(2)}</span> (Fee: <span id="fee-${req.id}">$${fee.toFixed(2)}</span>)
+                  Payout: <span id="payout-${req.id}">₹${payout.toFixed(2)}</span> (Fee: <span id="fee-${req.id}">₹${fee.toFixed(2)}</span>)
                 </div>
               </div>
             </div>
@@ -128,7 +128,7 @@ class ProviderExtension {
               <span><strong>Services:</strong> ${req.servicesSelected.map(s => s.name).join(', ')}</span>
               <span><strong>Schedule:</strong> ${req.date} at ${req.time}</span>
               <div style="margin-top: 0.75rem; display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
-                <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary);">Confirm/Edit Price ($):</label>
+                <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-secondary);">Confirm/Edit Price (₹):</label>
                 <input type="number" id="negotiated-price-${req.id}" class="form-input-small negotiated-price-input" data-id="${req.id}" style="width: 80px; height: 1.8rem; padding: 0.2rem;" value="${subtotal.toFixed(2)}" min="1">
               </div>
             </div>
@@ -167,7 +167,7 @@ class ProviderExtension {
             </div>
             <div class="schedule-details">
               <h4>${job.servicesSelected.map(s => s.name).join(', ')}</h4>
-              <p>Client: Abhishek K. • ${job.time} • <strong style="color: var(--success);">Payout: $${payout.toFixed(2)}</strong></p>
+              <p>Client: Abhishek K. • ${job.time} • <strong style="color: var(--success);">Payout: ₹${payout.toFixed(2)}</strong></p>
             </div>
             <div>
               <button class="btn btn-primary btn-small" onclick="app.completeJob('${job.id}')">Complete Job</button>
@@ -183,7 +183,7 @@ class ProviderExtension {
         <div class="rate-edit-row">
           <span class="rate-edit-name">${srv.name}</span>
           <div class="rate-edit-input-wrapper">
-            <span>$</span>
+            <span>₹</span>
             <input type="number" class="form-input-small text-right pr-input" value="${srv.price}" data-index="${index}">
           </div>
         </div>
@@ -230,7 +230,7 @@ class ProviderExtension {
 
       booking.chatHistory.push({
         sender: 'provider',
-        text: `Great! I've accepted this request for $${booking.totalPrice.toFixed(2)} ($${subtotal.toFixed(2)} price + $5.00 service fee) and added it to my calendar. See you then!`,
+        text: `Great! I've accepted this request for ₹${booking.totalPrice.toFixed(2)} (₹${subtotal.toFixed(2)} price + ₹5.00 service fee) and added it to my calendar. See you then!`,
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       });
     }
@@ -397,9 +397,9 @@ class ProviderExtension {
             const fee = val * 0.15;
             const total = val + 5.00;
             
-            payoutSpan.textContent = `$${payout.toFixed(2)}`;
-            feeSpan.textContent = `$${fee.toFixed(2)}`;
-            totalSpan.textContent = `$${total.toFixed(2)}`;
+            payoutSpan.textContent = `₹${payout.toFixed(2)}`;
+            feeSpan.textContent = `₹${fee.toFixed(2)}`;
+            totalSpan.textContent = `₹${total.toFixed(2)}`;
           }
         }
       });
