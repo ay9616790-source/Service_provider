@@ -1276,6 +1276,7 @@ class ServifyApp {
         this.state.currentUser = user;
         localStorage.setItem('servify_currentUser', JSON.stringify(user));
         this.updateAuthHeaders();
+        await this.loadDynamicData(); // Fetch the latest bookings and providers
         this.showToast(`Welcome back, ${user.name}!`);
 
         // Seamless booking checkout check
