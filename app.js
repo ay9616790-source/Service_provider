@@ -586,7 +586,7 @@ class ServifyApp {
       <div class="provider-card-ui">
         <div class="provider-card-body">
           <div class="provider-card-header">
-            <img src="${pro.avatar && (pro.avatar.startsWith('http') || pro.avatar.startsWith('data:image') || pro.avatar.endsWith('.png')) ? pro.avatar : 'servify_default.png'}" alt="${pro.name}" class="provider-card-avatar">
+            <img src="${pro.avatar && (pro.avatar.startsWith('http') || pro.avatar.startsWith('data:image') || pro.avatar.endsWith('.png')) ? pro.avatar : 'https://images.unsplash.com/photo-1540569014015-19a7be504e3a?w=200&h=200&fit=crop&q=80'}" alt="${pro.name}" class="provider-card-avatar">
             <div class="provider-card-title-block">
               <div class="provider-card-name-row">
                 <span class="provider-card-name">${pro.name}</span>
@@ -943,7 +943,7 @@ class ServifyApp {
         providerId: proId,
         providerName: pro ? pro.name : 'Vetted Pro',
         providerCategory: pro ? pro.category : 'Electrician',
-        providerAvatar: pro ? pro.avatar : 'servify_default.png',
+        providerAvatar: pro ? pro.avatar : 'https://images.unsplash.com/photo-1540569014015-19a7be504e3a?w=200&h=200&fit=crop&q=80',
         clientName: this.state.currentUserName,
         clientAddress: address,
         clientDescription: desc,
@@ -1061,7 +1061,7 @@ class ServifyApp {
     listContainer.innerHTML = results.map(pro => `
       <div class="provider-list-card-ui" onclick="app.viewProviderDetail('${pro.id}')">
         <div class="list-card-avatar-wrapper">
-          <img src="${pro.avatar && (pro.avatar.startsWith('http') || pro.avatar.startsWith('data:image') || pro.avatar.endsWith('.png')) ? pro.avatar : 'servify_default.png'}" alt="${pro.name}" class="list-card-avatar">
+          <img src="${pro.avatar && (pro.avatar.startsWith('http') || pro.avatar.startsWith('data:image') || pro.avatar.endsWith('.png')) ? pro.avatar : 'https://images.unsplash.com/photo-1540569014015-19a7be504e3a?w=200&h=200&fit=crop&q=80'}" alt="${pro.name}" class="list-card-avatar">
         </div>
         <div class="list-card-content">
           <div class="list-card-heading">
@@ -1130,8 +1130,8 @@ class ServifyApp {
     this.navigate('detail-view');
 
     // Banner & Avatar
-    document.getElementById('detail-banner').src = (pro.banner && (pro.banner.startsWith('http') || pro.banner.startsWith('data:image'))) ? pro.banner : 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=800&h=300&fit=crop&q=80';
-    document.getElementById('detail-avatar').src = (pro.avatar && (pro.avatar.startsWith('http') || pro.avatar.startsWith('data:image') || pro.avatar.endsWith('.png'))) ? pro.avatar : 'servify_default.png';
+    document.getElementById('detail-banner').src = (pro.banner && (pro.banner.startsWith('http') || pro.banner.startsWith('data:image') || pro.banner.endsWith('.png'))) ? pro.banner : 'servify_default.png';
+    document.getElementById('detail-avatar').src = (pro.avatar && (pro.avatar.startsWith('http') || pro.avatar.startsWith('data:image') || pro.avatar.endsWith('.png'))) ? pro.avatar : 'https://images.unsplash.com/photo-1540569014015-19a7be504e3a?w=200&h=200&fit=crop&q=80';
     document.getElementById('detail-name').textContent = pro.name;
     document.getElementById('detail-tagline').textContent = pro.tagline;
     document.getElementById('detail-rating').textContent = pro.rating;

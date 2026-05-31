@@ -446,8 +446,8 @@ app.post('/api/auth/register', async (req, res) => {
         reviewsCount: 0,
         experience: parseInt(providerExperience) || 1,
         hourlyRate: parseInt(providerHourlyRate) || 40,
-        avatar: providerAvatar || 'servify_default.png',
-        banner: 'https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=800&h=300&fit=crop&q=80',
+        avatar: providerAvatar || 'https://images.unsplash.com/photo-1540569014015-19a7be504e3a?w=200&h=200&fit=crop&q=80',
+        banner: 'servify_default.png',
         tagline: providerTagline || `Certified professional`,
         isVerified: false,
         phone: phone || '',
@@ -470,7 +470,7 @@ app.post('/api/auth/register', async (req, res) => {
       phone: phone || '',
       society: society || 'gokuldham',
       avatar: role === 'provider' 
-        ? 'servify_default.png'
+        ? 'https://images.unsplash.com/photo-1540569014015-19a7be504e3a?w=200&h=200&fit=crop&q=80'
         : 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&h=200&fit=crop&q=80',
       providerId: providerId
     });
